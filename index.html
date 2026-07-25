@@ -1198,7 +1198,7 @@
          Shares its data with #bgs-gold-ticker, so both stay in sync. */
       #bgs-hero-rates {
         position: absolute;
-        bottom: 5.5rem;
+        bottom: 2rem;
         left: 2.5rem;
         right: 2.5rem;
         z-index: 50;
@@ -1288,9 +1288,9 @@
         vertical-align: super;
       }
 
-      /* Lift the hero's bottom copy so the bar has room underneath it */
-      .bgs-hero-lift-left  { bottom: 12.5rem !important; }
-      .bgs-hero-lift-right { bottom: 12.5rem !important; }
+      /* Lift the hero's bottom copy just enough to clear the bar beneath it */
+      .bgs-hero-lift-left  { bottom: 9rem !important; }
+      .bgs-hero-lift-right { bottom: 9rem !important; }
 
       @media (max-width: 900px) {
         #bgs-hero-rates { left: 1.25rem; right: 1.25rem; }
@@ -1301,7 +1301,7 @@
         /* On phones the left note is hidden and the CTA block is tall —
            park the bar just above the scroll cue instead. */
         #bgs-hero-rates {
-          bottom: 4.25rem;
+          bottom: 3.25rem;
           left: 1rem;
           right: 1rem;
         }
@@ -1309,7 +1309,7 @@
         #bgs-hero-rates .bghr-k { font-size: 0.46rem; letter-spacing: 0.16em; }
         #bgs-hero-rates .bghr-p { font-size: 0.72rem; }
         #bgs-hero-rates .bghr-u { display: none; }
-        .bgs-hero-lift-right { bottom: 10.5rem !important; }
+        .bgs-hero-lift-right { bottom: 8.5rem !important; }
       }
     </style>
   </head>
@@ -2214,16 +2214,34 @@
         return (!isNaN(n) && n > 0) ? n : null;
       }
 
-      function getCached22K() {
+      /* Cache shape: { rates: {24K:…,22K:…}, price: <22K>, ts: <ms> }
+         `price` is kept so caches written by older builds still load. */
+      function readGoldCache() {
         try {
           var raw = localStorage.getItem('fg_gold_cache');
           if (!raw) return null;
           var d = JSON.parse(raw);
-          if (Date.now() - d.ts < 30 * 60 * 1000 && d.price >= 150 && d.price <= 900) {
-            return d.price;
-          }
+          if (Date.now() - d.ts >= 30 * 60 * 1000) return null;
+          return d;
         } catch (e) {}
         return null;
+      }
+
+      function getCached22K() {
+        var d = readGoldCache();
+        if (!d) return null;
+        var p = (d.rates && d.rates['22K']) || d.price;
+        return (p >= 150 && p <= 900) ? p : null;
+      }
+
+      /* Last real per-karat numbers scraped from dubaicityofgold.com.
+         Used when a later fetch fails, so we repeat the source's own figures
+         instead of inventing them from purity ratios. */
+      function getCachedRate(k) {
+        var d = readGoldCache();
+        if (!d || !d.rates) return null;
+        var p = d.rates[k];
+        return (typeof p === 'number' && p >= 50 && p <= 1500) ? p : null;
       }
 
       function computeAllRates(base22K) {
@@ -2231,11 +2249,16 @@
         for (var i = 0; i < KARATS.length; i++) {
           var k = KARATS[i];
           var admin = getAdminRate(k);
+          var cached = getCachedRate(k);
           if (admin !== null) {
-            rates[k] = admin;
+            rates[k] = admin;              // shop override wins
           } else if (liveRates[k]) {
-            rates[k] = liveRates[k];
+            rates[k] = liveRates[k];       // live from dubaicityofgold.com
+          } else if (cached !== null) {
+            rates[k] = cached;             // last real figure from that source
           } else {
+            // Last resort only — the source's spreads are not pure purity
+            // ratios, so this is an approximation, not their published rate.
             rates[k] = parseFloat((base22K * KARAT_RATIOS[k]).toFixed(2));
           }
         }
@@ -2271,8 +2294,18 @@
                 }
               });
             });
+            // Cache every karat we actually got, so a later failed fetch can
+            // repeat the source's real figures rather than deriving them.
             if (liveRates['22K']) {
-              localStorage.setItem('fg_gold_cache', JSON.stringify({ price: liveRates['22K'], ts: Date.now() }));
+              var snap = {};
+              for (var ki = 0; ki < KARATS.length; ki++) {
+                if (liveRates[KARATS[ki]]) snap[KARATS[ki]] = liveRates[KARATS[ki]];
+              }
+              localStorage.setItem('fg_gold_cache', JSON.stringify({
+                rates: snap,
+                price: liveRates['22K'],   // legacy field for older builds
+                ts: Date.now()
+              }));
             }
           }
           if (data.error) console.log('[BGS Gold] API error:', data.error);

@@ -1192,6 +1192,125 @@
         #bgs-hpd-img { max-height: 92vw; aspect-ratio: 1 / 1; }
         #bgs-hpd-body { padding: 1.5rem 1.25rem 3rem; overflow-y: visible; }
       }
+
+      /* ── HERO HORIZONTAL GOLD RATE BAR ──
+         Sits across the bottom of the hero, beneath the side copy.
+         Shares its data with #bgs-gold-ticker, so both stay in sync. */
+      #bgs-hero-rates {
+        position: absolute;
+        bottom: 5.5rem;
+        left: 2.5rem;
+        right: 2.5rem;
+        z-index: 50;
+        display: flex;
+        align-items: stretch;
+        background: rgba(8,8,8,0.55);
+        border: 1px solid rgba(212,175,55,0.16);
+        border-radius: 3px;
+        backdrop-filter: blur(9px);
+        -webkit-backdrop-filter: blur(9px);
+        box-shadow: 0 18px 44px rgba(0,0,0,0.5);
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16,1,0.3,1);
+      }
+      #bgs-hero-rates.bghr-in { opacity: 1; transform: translateY(0); }
+
+      #bgs-hero-rates .bghr-label {
+        display: flex;
+        align-items: center;
+        padding: 0 1.15rem;
+        border-right: 1px solid rgba(212,175,55,0.12);
+        font-size: 0.5rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: #9f8a48;
+        white-space: nowrap;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+
+      #bgs-hero-rates .bghr-cells {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+      }
+
+      #bgs-hero-rates .bghr-cell {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        padding: 0.72rem 0.4rem 0.78rem;
+        border-right: 1px solid rgba(255,255,255,0.05);
+      }
+      #bgs-hero-rates .bghr-cell:last-child { border-right: none; }
+
+      /* karat sits above the price */
+      #bgs-hero-rates .bghr-k {
+        font-size: 0.53rem;
+        font-weight: 500;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.42);
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        line-height: 1;
+      }
+
+      #bgs-hero-rates .bghr-p {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: rgba(212,175,55,0.92);
+        letter-spacing: 0.02em;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      #bgs-hero-rates .bghr-cell.bghr-22k .bghr-p { color: #d4af37; }
+      #bgs-hero-rates .bghr-cell.bghr-22k .bghr-k { color: rgba(212,175,55,0.6); }
+
+      #bgs-hero-rates .bghr-u {
+        font-size: 0.52rem;
+        font-weight: 400;
+        color: rgba(255,255,255,0.3);
+        margin-left: 0.22rem;
+        letter-spacing: 0.09em;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+
+      #bgs-hero-rates .bghr-star {
+        font-size: 0.45rem;
+        color: #9f8a48;
+        margin-left: 0.15rem;
+        vertical-align: super;
+      }
+
+      /* Lift the hero's bottom copy so the bar has room underneath it */
+      .bgs-hero-lift-left  { bottom: 12.5rem !important; }
+      .bgs-hero-lift-right { bottom: 12.5rem !important; }
+
+      @media (max-width: 900px) {
+        #bgs-hero-rates { left: 1.25rem; right: 1.25rem; }
+        #bgs-hero-rates .bghr-label { display: none; }
+      }
+
+      @media (max-width: 640px) {
+        /* On phones the left note is hidden and the CTA block is tall —
+           park the bar just above the scroll cue instead. */
+        #bgs-hero-rates {
+          bottom: 4.25rem;
+          left: 1rem;
+          right: 1rem;
+        }
+        #bgs-hero-rates .bghr-cell { padding: 0.55rem 0.2rem 0.6rem; gap: 0.24rem; }
+        #bgs-hero-rates .bghr-k { font-size: 0.46rem; letter-spacing: 0.16em; }
+        #bgs-hero-rates .bghr-p { font-size: 0.72rem; }
+        #bgs-hero-rates .bghr-u { display: none; }
+        .bgs-hero-lift-right { bottom: 10.5rem !important; }
+      }
     </style>
   </head>
   <body>
@@ -2217,6 +2336,66 @@
             '</div>';
         }
         container.innerHTML = html;
+        // The hero bar shows the same numbers — keep the two in lockstep
+        renderHeroRateBar(rates);
+      }
+
+      /* ─────────────────────────────────────────
+         HERO HORIZONTAL GOLD RATE BAR
+         A second view of the same rates, laid out across the bottom of
+         the hero (karat above, price beneath). Fed by renderTickerRows,
+         so admin overrides and live fetches reach it automatically.
+         ───────────────────────────────────────── */
+      var _bgsLastRates = null;
+
+      function injectHeroRateBar() {
+        var hero = document.querySelector('section.relative.w-full.overflow-hidden.bg-black');
+        if (!hero) return false;
+
+        // Lift the hero's bottom copy so the bar sits beneath it, not over it
+        var leftNote = hero.querySelector('div[class*="bottom-14"][class*="left-10"]');
+        if (leftNote) leftNote.classList.add('bgs-hero-lift-left');
+        var rightCta = hero.querySelector('div[class*="sm:bottom-24"]');
+        if (rightCta) rightCta.classList.add('bgs-hero-lift-right');
+
+        if (document.getElementById('bgs-hero-rates')) return true;
+
+        var bar = document.createElement('div');
+        bar.id = 'bgs-hero-rates';
+        bar.innerHTML =
+          '<div class="bghr-label">Gold Rates &middot; AED/g</div>' +
+          '<div class="bghr-cells"></div>';
+        hero.appendChild(bar);
+
+        if (_bgsLastRates) renderHeroRateBar(_bgsLastRates);
+        // Fade in on the next frame so the transition actually runs.
+        // rAF is throttled to zero in a background tab, so a timer backs it up.
+        var reveal = function () { bar.classList.add('bghr-in'); };
+        requestAnimationFrame(function () { requestAnimationFrame(reveal); });
+        setTimeout(reveal, 400);
+        return true;
+      }
+
+      function renderHeroRateBar(rates) {
+        _bgsLastRates = rates;
+        var cells = document.querySelector('#bgs-hero-rates .bghr-cells');
+        if (!cells) return;
+        var html = '';
+        for (var i = 0; i < KARATS.length; i++) {
+          var k = KARATS[i];
+          var price = rates[k];
+          if (typeof price !== 'number') continue;
+          var isAdmin = getAdminRate(k) !== null;
+          html +=
+            '<div class="bghr-cell' + (k === '22K' ? ' bghr-22k' : '') + '">' +
+              '<span class="bghr-k">' + k + '</span>' +
+              '<span class="bghr-p">' + price.toFixed(2) +
+                '<span class="bghr-u">AED</span>' +
+                (isAdmin ? '<span class="bghr-star" title="Admin override">&#9733;</span>' : '') +
+              '</span>' +
+            '</div>';
+        }
+        cells.innerHTML = html;
       }
 
       window.bgsRefreshGold = async function () {
@@ -3427,6 +3606,9 @@
 
         // Apply hero products on homepage collection
         applyHeroProducts();
+
+        // Horizontal gold rate bar across the bottom of the hero
+        injectHeroRateBar();
 
         // Scrolling ribbon: bind pause-on-hover/press, apply custom text if set
         var _mqTrack = document.querySelector('.marquee-track');

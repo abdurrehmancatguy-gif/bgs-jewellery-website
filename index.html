@@ -1,0 +1,3511 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BGS Jewellery</title>
+    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=3"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-d0osuhxy.css?v=2">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         BGS JEWELRY — CLOUD SYNC (Firebase Firestore)
+         ───────────────────────────────────────────────────────────────
+         This makes inventory sync across ALL devices in real time.
+
+         ▼▼▼  PASTE YOUR OWN FIREBASE CONFIG BELOW  ▼▼▼
+         (Get it from console.firebase.google.com → Project settings →
+          "Your apps" → the web app → "SDK setup and configuration" →
+          choose "Config". Copy the values into the object below.)
+
+         Until you paste a real config, the site still works, it just
+         won't sync across devices (it falls back to on-device storage).
+         ═══════════════════════════════════════════════════════════════ -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script>
+      // ┌─────────────────────────────────────────────────────────────┐
+      // │  1. REPLACE the placeholder values below with YOUR config.  │
+      // └─────────────────────────────────────────────────────────────┘
+      var firebaseConfig = {
+        apiKey:            "AIzaSyBbSB5fb8TbsCZvCE6g-CgWcFvlemxEoHU",
+        authDomain:        "bgs-jewellery.firebaseapp.com",
+        projectId:         "bgs-jewellery",
+        storageBucket:     "bgs-jewellery.firebasestorage.app",
+        messagingSenderId: "747894705495",
+        appId:             "1:747894705495:web:84b58fb469aadb048f0212"
+      };
+
+      // ── Nothing below this line needs editing. ──
+      (function () {
+        try {
+          var configured =
+            firebaseConfig.projectId &&
+            firebaseConfig.projectId !== "YOUR_PROJECT_ID" &&
+            firebaseConfig.apiKey &&
+            firebaseConfig.apiKey !== "YOUR_API_KEY" &&
+            window.firebase && window.firebase.initializeApp;
+          if (configured) {
+            window.firebase.initializeApp(firebaseConfig);
+            window.bgsDB = window.firebase.firestore();
+            console.log("[BGS] Firebase cloud sync is ON.");
+          } else {
+            console.warn("[BGS] Firebase not configured yet — running in on-device mode. " +
+                         "Paste your Firebase config in index.html to enable cross-device sync.");
+          }
+        } catch (e) {
+          console.warn("[BGS] Firebase init failed — running in on-device mode:", e.message);
+        }
+      })();
+    </script>
+
+    <!-- ═══════════════════════════════════════════
+         BGS JEWELRY — FEATURE INJECTION STYLES
+         ═══════════════════════════════════════════ -->
+    <style id="bgs-feature-styles">
+
+      /* ── GOLD PRICE TICKER ── */
+      #bgs-gold-ticker {
+        position: fixed;
+        top: 6rem; /* below the fixed 82px nav bar so it never overlaps the menu */
+        right: 1.5rem;
+        z-index: 8900;
+        background: linear-gradient(135deg, #080808 0%, #110e06 50%, #080808 100%);
+        border: 1px solid rgba(212,175,55,0.28);
+        border-radius: 3px;
+        padding: 1rem 1.2rem 0.85rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,0,0,0.5);
+        transform: translateX(calc(100% + 1.6rem));
+        transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
+        min-width: 210px;
+        max-width: 260px;
+        overflow: visible;
+      }
+      #bgs-gold-ticker.bgt-open {
+        transform: translateX(0);
+      }
+
+      /* ── TICKER TOGGLE TAB ── */
+      #bgs-ticker-toggle {
+        position: absolute;
+        top: 0;
+        left: -30px;
+        width: 30px;
+        height: 122px;
+        background: linear-gradient(135deg, #080808 0%, #110e06 50%, #080808 100%);
+        border: 1px solid rgba(212,175,55,0.28);
+        border-right: none;
+        border-radius: 3px 0 0 3px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        box-shadow: -5px 0 14px rgba(0,0,0,0.55);
+        transition: background 0.2s;
+      }
+      @keyframes bgs-gold-pulse {
+        0%   { box-shadow: -5px 0 16px rgba(0,0,0,0.55), 0 0 10px rgba(212,175,55,0.15), -2px 0 14px rgba(212,175,55,0.12); transform: scaleY(1); }
+        50%  { box-shadow: -5px 0 20px rgba(0,0,0,0.38), 0 0 32px rgba(212,175,55,0.68), -4px 0 38px rgba(212,175,55,0.48), 0 0 6px rgba(255,220,80,0.9); transform: scaleY(1.028); }
+        100% { box-shadow: -5px 0 16px rgba(0,0,0,0.55), 0 0 10px rgba(212,175,55,0.15), -2px 0 14px rgba(212,175,55,0.12); transform: scaleY(1); }
+      }
+
+      #bgs-ticker-toggle {
+        animation: bgs-gold-pulse 2.4s ease-in-out infinite;
+        will-change: transform, box-shadow;
+      }
+      #bgs-ticker-toggle:hover {
+        animation: none;
+        background: linear-gradient(135deg, #101010 0%, #1a1300 50%, #101010 100%);
+        box-shadow: -5px 0 22px rgba(0,0,0,0.5), 0 0 24px rgba(212,175,55,0.35), -4px 0 28px rgba(212,175,55,0.2);
+        transform: scaleY(1.01);
+        transition: box-shadow 0.35s ease, transform 0.35s ease, background 0.2s;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #bgs-ticker-toggle { animation: none; }
+      }
+
+      .bgt-tab-label {
+        writing-mode: vertical-rl;
+        font-size: 0.55rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: rgba(212,175,55,0.8);
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        line-height: 1;
+        white-space: nowrap;
+        user-select: none;
+        pointer-events: none;
+        transition: color 0.2s;
+      }
+      #bgs-ticker-toggle:hover .bgt-tab-label { color: #d4af37; }
+
+      #bgs-gold-ticker .bgt-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.7rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(212,175,55,0.12);
+      }
+
+      #bgs-gold-ticker .bgt-title {
+        font-size: 0.52rem;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: #9f8a48;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+
+      #bgs-gold-ticker .bgt-refresh {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #444;
+        font-size: 0.85rem;
+        padding: 0 0 0 0.5rem;
+        line-height: 1;
+        transition: color 0.2s, transform 0.3s;
+        font-family: inherit;
+      }
+      #bgs-gold-ticker .bgt-refresh:hover { color: #d4af37; }
+      #bgs-gold-ticker .bgt-refresh.spinning { animation: bgtSpin 1s linear infinite; }
+      @keyframes bgtSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+      #bgs-gold-ticker .bgt-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.28rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+      }
+      #bgs-gold-ticker .bgt-row:last-child { border-bottom: none; }
+
+      #bgs-gold-ticker .bgt-karat {
+        font-size: 0.78rem;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        color: rgba(255,255,255,0.45);
+        text-transform: uppercase;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        min-width: 36px;
+      }
+
+      #bgs-gold-ticker .bgt-price {
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: rgba(212,175,55,0.85);
+        letter-spacing: 0.03em;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+
+      #bgs-gold-ticker .bgt-unit {
+        font-size: 0.62rem;
+        font-weight: 400;
+        color: #555;
+        margin-left: 0.22rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+
+      #bgs-gold-ticker .bgt-admin-star {
+        font-size: 0.5rem;
+        color: #9f8a48;
+        margin-left: 0.15rem;
+      }
+
+      #bgs-gold-ticker .bgt-footer {
+        margin-top: 0.6rem;
+        padding-top: 0.45rem;
+        border-top: 1px solid rgba(255,255,255,0.04);
+      }
+
+      #bgs-gold-ticker .bgt-source {
+        font-size: 0.5rem;
+        color: #383838;
+        text-decoration: none;
+        letter-spacing: 0.07em;
+        transition: color 0.2s;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        display: block;
+      }
+      #bgs-gold-ticker .bgt-source:hover { color: #9f8a48; }
+
+      /* Hide the original React 22K-only price box */
+      #bgs-hide-react-gold { display: none !important; }
+
+      /* ── NAVIGATION DROPDOWN ── */
+      #bgs-collection-nav {
+        display: inline-flex;
+        align-items: center;
+        gap: 0;
+      }
+
+      .bgs-dd-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .bgs-dd-btn {
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.8);
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: normal;
+        text-transform: none;
+        cursor: pointer;
+        padding: 0.4rem 0.75rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        transition: color 0.2s;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        line-height: 1;
+      }
+      .bgs-dd-btn:hover { color: #d4af37; }
+
+      .bgs-dd-btn .bgs-caret {
+        font-size: 0.45rem;
+        opacity: 0.5;
+        transition: opacity 0.15s;
+        display: inline-block;
+      }
+      .bgs-dd-wrap:hover .bgs-caret { opacity: 1; }
+
+      @keyframes bgsDropOpen {
+        from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+        to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+
+      .bgs-dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: #060606;
+        border: 1px solid rgba(212,175,55,0.18);
+        min-width: 190px;
+        z-index: 99999;
+        padding: 0.4rem 0;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        /* linger ~0.35s after the pointer leaves so the menu stays reachable */
+        transition: opacity 0.18s ease 0.35s, visibility 0s linear 0.53s;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.85);
+      }
+
+      /* invisible bridge covering the 6px gap between button and menu,
+         so moving the mouse down into the menu never loses hover */
+      .bgs-dropdown::before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: -6px;
+        right: -6px;
+        height: 12px;
+      }
+
+      .bgs-dd-wrap:hover .bgs-dropdown,
+      .bgs-dd-wrap.bgs-open .bgs-dropdown {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: all;
+        transition-delay: 0s, 0s;
+        animation: bgsDropOpen 0.27s cubic-bezier(0.16,1,0.3,1) forwards;
+      }
+
+      .bgs-dropdown-item {
+        display: block;
+        width: 100%;
+        padding: 0.45rem 1rem;
+        font-size: 0.67rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.55);
+        text-decoration: none;
+        cursor: pointer;
+        transition: color 0.12s, background 0.12s;
+        background: none;
+        border: none;
+        text-align: left;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        white-space: nowrap;
+        box-sizing: border-box;
+      }
+      .bgs-dropdown-item:hover {
+        color: #d4af37;
+        background: rgba(212,175,55,0.05);
+      }
+
+      .bgs-dropdown-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.06);
+        margin: 0.25rem 0;
+      }
+
+      /* ── ABOUT US MODAL ── */
+      #bgs-about-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.88);
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        backdrop-filter: blur(4px);
+      }
+      #bgs-about-overlay.bgs-open {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      #bgs-about-modal {
+        background: #080808;
+        border: 1px solid rgba(212,175,55,0.22);
+        max-width: 640px;
+        width: 100%;
+        padding: 2.5rem 2.75rem 2.25rem;
+        position: relative;
+        max-height: 88vh;
+        overflow-y: auto;
+        box-shadow: 0 32px 80px rgba(0,0,0,0.95);
+      }
+
+      #bgs-about-modal::-webkit-scrollbar { width: 4px; }
+      #bgs-about-modal::-webkit-scrollbar-track { background: #111; }
+      #bgs-about-modal::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); }
+
+      #bgs-about-modal h2 {
+        font-family: 'Playfair Display', 'Georgia', serif;
+        font-size: 2rem;
+        font-weight: 400;
+        font-style: italic;
+        color: #d4af37;
+        margin: 0 0 0.25rem;
+        letter-spacing: 0.02em;
+        line-height: 1.15;
+      }
+
+      #bgs-about-modal .bgs-about-sub {
+        font-size: 0.6rem;
+        letter-spacing: 0.35em;
+        text-transform: uppercase;
+        color: rgba(212,175,55,0.45);
+        margin-bottom: 1.5rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+
+      #bgs-about-modal .bgs-about-divider {
+        width: 48px;
+        height: 1px;
+        background: rgba(212,175,55,0.3);
+        margin: 0 0 1.75rem;
+      }
+
+      #bgs-about-modal p {
+        color: rgba(255,255,255,0.65);
+        font-size: 0.88rem;
+        line-height: 1.85;
+        margin-bottom: 1.1rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+
+      #bgs-about-modal .bgs-about-sig {
+        color: #d4af37;
+        font-style: italic;
+        font-family: 'Playfair Display', serif;
+        font-size: 0.95rem;
+        margin-top: 1.5rem;
+        margin-bottom: 0;
+      }
+
+      #bgs-about-close {
+        position: absolute;
+        top: 1.1rem;
+        right: 1.1rem;
+        background: none;
+        border: 1px solid rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.4);
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: border-color 0.2s, color 0.2s;
+        font-family: inherit;
+        line-height: 1;
+      }
+      #bgs-about-close:hover {
+        border-color: #d4af37;
+        color: #d4af37;
+      }
+
+      /* ── ADMIN PANEL EXTENSION ── */
+      #bgs-admin-gold-panel {
+        margin-top: 1.5rem;
+        border-top: 1px solid rgba(212,175,55,0.12);
+        padding-top: 1.5rem;
+      }
+
+      #bgs-admin-gold-panel .bgs-ag-title {
+        font-size: 0.62rem;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: #9f8a48;
+        margin-bottom: 1.25rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+
+      #bgs-admin-gold-panel .bgs-ag-row {
+        display: grid;
+        grid-template-columns: 120px 1fr 70px 60px 28px;
+        gap: 0.55rem;
+        align-items: center;
+        margin-bottom: 0.7rem;
+      }
+
+      #bgs-admin-gold-panel .bgs-ag-label {
+        font-size: 0.6rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #666;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+
+      #bgs-admin-gold-panel .bgs-ag-input {
+        background: #0e0e0e;
+        border: 1px solid rgba(212,175,55,0.22);
+        color: #fff;
+        padding: 0.48rem 0.7rem;
+        font-size: 0.82rem;
+        outline: none;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        width: 100%;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+      }
+      #bgs-admin-gold-panel .bgs-ag-input:focus {
+        border-color: rgba(212,175,55,0.5);
+      }
+
+      #bgs-admin-gold-panel .bgs-ag-save {
+        background: #d4af37;
+        color: #0a0a0a;
+        border: none;
+        padding: 0.48rem 0;
+        font-size: 0.58rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        cursor: pointer;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        font-weight: 700;
+        width: 100%;
+        transition: opacity 0.15s;
+      }
+      #bgs-admin-gold-panel .bgs-ag-save:hover { opacity: 0.88; }
+
+      #bgs-admin-gold-panel .bgs-ag-clear {
+        background: none;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.4);
+        padding: 0.48rem 0;
+        font-size: 0.58rem;
+        cursor: pointer;
+        font-family: inherit;
+        width: 100%;
+        transition: border-color 0.15s, color 0.15s;
+      }
+      #bgs-admin-gold-panel .bgs-ag-clear:hover {
+        border-color: rgba(255,255,255,0.25);
+        color: rgba(255,255,255,0.65);
+      }
+
+      #bgs-admin-gold-panel .bgs-ag-tick {
+        font-size: 0.7rem;
+        color: #4ade80;
+        text-align: center;
+        display: none;
+      }
+
+      /* ── Hero Products Admin Panel ── */
+      #bgs-hero-panel {
+        margin-top: 1.5rem;
+        border-top: 1px solid rgba(212,175,55,0.12);
+        padding-top: 1.5rem;
+      }
+      #bgs-hero-panel .bgs-hp-title {
+        font-size: 0.62rem;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: #9f8a48;
+        margin-bottom: 0.5rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      #bgs-hero-panel .bgs-hp-sub {
+        font-size: 0.67rem;
+        color: rgba(255,255,255,0.28);
+        margin-bottom: 1.2rem;
+        line-height: 1.5;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      #bgs-hero-panel .bgs-hp-section-label {
+        font-size: 0.58rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #555;
+        margin-bottom: 0.6rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      .bgs-hp-selected-row {
+        display: grid;
+        grid-template-columns: 22px 44px 1fr auto;
+        gap: 0.55rem;
+        align-items: center;
+        padding: 0.45rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+      }
+      .bgs-hp-sel-num {
+        font-size: 0.62rem;
+        color: #d4af37;
+        font-weight: 700;
+        text-align: center;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      .bgs-hp-sel-img {
+        width: 44px;
+        height: 44px;
+        object-fit: cover;
+        border-radius: 2px;
+        border: 1px solid rgba(212,175,55,0.18);
+      }
+      .bgs-hp-sel-name {
+        font-size: 0.72rem;
+        color: #ccc;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .bgs-hp-sel-btns {
+        display: flex;
+        gap: 0.3rem;
+        align-items: center;
+      }
+      .bgs-hp-move {
+        background: none;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.4);
+        width: 24px; height: 24px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        border-radius: 2px;
+        line-height: 1;
+        padding: 0;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .bgs-hp-move:hover { color: #d4af37; border-color: rgba(212,175,55,0.4); }
+      .bgs-hp-remove {
+        background: none;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,100,100,0.55);
+        width: 24px; height: 24px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        border-radius: 2px;
+        line-height: 1;
+        padding: 0;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .bgs-hp-remove:hover { color: #f87171; border-color: rgba(248,113,113,0.4); }
+      .bgs-hp-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.55rem;
+        margin-bottom: 1rem;
+      }
+      .bgs-hp-card {
+        cursor: pointer;
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 3px;
+        overflow: hidden;
+        transition: border-color 0.2s;
+      }
+      .bgs-hp-card:hover { border-color: rgba(212,175,55,0.35); }
+      .bgs-hp-card-img-wrap {
+        position: relative;
+        padding-top: 80%;
+        overflow: hidden;
+      }
+      .bgs-hp-card img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .bgs-hp-card-add {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: rgba(212,175,55,0.7);
+        opacity: 0;
+        transition: opacity 0.18s;
+      }
+      .bgs-hp-card:hover .bgs-hp-card-add { opacity: 1; }
+      .bgs-hp-card-info {
+        padding: 0.35rem 0.45rem 0.4rem;
+        background: #111;
+      }
+      .bgs-hp-card-name {
+        font-size: 0.6rem;
+        color: #ccc;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 0;
+      }
+      .bgs-hp-card-tag {
+        font-size: 0.52rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        margin: 0;
+      }
+      #bgs-hp-reset {
+        background: none;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.35);
+        padding: 0.45rem 1rem;
+        font-size: 0.58rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        cursor: pointer;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        margin-top: 0.5rem;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      #bgs-hp-reset:hover { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.25); }
+
+      /* ── HIDE SCROLL INDICATOR ── */
+      button[aria-label="Scroll to collection"] { display: none !important; }
+
+      /* ── INVENTORY: cancel stagger delay that makes cards appear 2-3s late on scroll ── */
+      .product-card {
+        transition-delay: 0ms !important;
+      }
+
+      /* ── SLIDESHOW for multi-image products ── */
+      .bgs-slideshow {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: #0a0a0a; /* backdrop for the contained (uncropped) image */
+      }
+      .bgs-slideshow img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* show the whole piece — never crop the product photo */
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        pointer-events: none;
+      }
+      .bgs-slideshow img.bgs-ss-active {
+        opacity: 1;
+      }
+      /* Product detail (modal) single image: show the whole piece, never crop.
+         Overrides React's inline object-fit:cover. */
+      div[style*="z-index: 400"] img[style*="object-fit"] {
+        object-fit: contain !important;
+        background: #0a0a0a;
+      }
+      .bgs-ss-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 4;
+        background: rgba(0,0,0,0.55);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.85);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        transition: background 0.15s, border-color 0.15s;
+        padding: 0;
+        line-height: 1;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+      .bgs-ss-arrow:hover {
+        background: rgba(0,0,0,0.8);
+        border-color: rgba(212,175,55,0.5);
+        color: #d4af37;
+      }
+      .bgs-ss-prev { left: 8px; }
+      .bgs-ss-next { right: 8px; }
+      .bgs-ss-dots {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 4;
+        display: flex;
+        gap: 5px;
+        padding: 3px 8px;
+        border-radius: 10px;
+        background: rgba(0,0,0,0.45);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+      .bgs-ss-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.3);
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+        border: none;
+        padding: 0;
+      }
+      .bgs-ss-dot.bgs-ss-dot-active {
+        background: #d4af37;
+        transform: scale(1.3);
+      }
+
+      @media (max-width: 640px) {
+        /* nav pill: wrap onto two rows instead of clipping off-screen */
+        nav .bg-white\/20 {
+          flex-wrap: wrap;
+          justify-content: center;
+          max-width: calc(100vw - 1.25rem);
+          border-radius: 20px;
+        }
+
+        #bgs-gold-ticker {
+          bottom: 0;
+          top: auto;
+          right: 0;
+          left: 0;
+          max-width: 100%;
+          border-radius: 0;
+          border-left: none;
+          border-right: none;
+          transform: translateY(100%);
+          transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
+        }
+        #bgs-gold-ticker.bgt-open {
+          transform: translateY(0);
+        }
+        /* toggle becomes a tab on the sheet's top edge — always reachable */
+        #bgs-ticker-toggle {
+          display: flex;
+          top: -30px;
+          right: 14px;
+          left: auto;
+          width: auto;
+          min-width: 96px;
+          height: 30px;
+          padding: 0 0.9rem;
+          border: 1px solid rgba(212,175,55,0.28);
+          border-bottom: none;
+          border-radius: 4px 4px 0 0;
+          box-shadow: 0 -6px 14px rgba(0,0,0,0.45);
+        }
+        #bgs-ticker-toggle .bgt-tab-label {
+          writing-mode: horizontal-tb;
+          font-size: 0.58rem;
+        }
+        .bgs-dd-btn { font-size: 0.72rem; padding: 0.35rem 0.5rem; }
+        #bgs-about-modal { padding: 2rem 1.5rem 1.75rem; }
+        #bgs-about-modal h2 { font-size: 1.5rem; }
+
+        /* ── MOBILE PRODUCT MODAL: stack image on top, details below ── */
+        div[style*="z-index: 400"] {
+          overflow: auto !important;
+          align-items: flex-start !important;
+          padding-top: 2.5rem !important;
+        }
+        div[style*="z-index: 400"] > div[style*="grid-template-columns"] {
+          grid-template-columns: 1fr !important;
+          grid-template-rows: auto auto !important;
+          max-height: none !important;
+          overflow: visible !important;
+          width: 100% !important;
+          margin: 0 !important;
+        }
+        div[style*="z-index: 400"] > div[style*="grid-template-columns"] > div:first-child {
+          aspect-ratio: 1 / 1 !important;
+          max-height: 92vw !important;
+          min-height: 0 !important;
+          width: 100% !important;
+          overflow: hidden !important;
+          background: #0a0a0a !important;
+        }
+        div[style*="z-index: 400"] > div[style*="grid-template-columns"] > div:nth-child(2) {
+          padding: 1.5rem 1.25rem 3rem !important;
+          overflow-y: visible !important;
+          min-height: 0 !important;
+        }
+        #bgs-admin-gold-panel .bgs-ag-row {
+          grid-template-columns: 100px 1fr 60px 52px 24px;
+          gap: 0.4rem;
+        }
+      }
+
+      /* ── CUSTOM CATEGORY FILTER BAR ── */
+      #bgs-cat-filter {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.9rem;
+      }
+
+      /* ── Dropdown wrapper ── */
+      .bgs-cat-dd-wrap {
+        position: relative;
+        display: inline-block;
+      }
+
+      /* ── Trigger button ── */
+      .bgs-cat-dd-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.46rem 0.8rem 0.46rem 1.05rem;
+        border-radius: 22px;
+        border: 1px solid rgba(212,175,55,0.22);
+        background: linear-gradient(135deg, rgba(10,8,2,0.97) 0%, rgba(16,12,3,0.97) 100%);
+        color: rgba(212,175,55,0.72);
+        font-size: 0.67rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        cursor: pointer;
+        white-space: nowrap;
+        user-select: none;
+        min-width: 148px;
+        justify-content: space-between;
+        transition: border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+        outline: none;
+      }
+      .bgs-cat-dd-btn:focus { outline: none; }
+      .bgs-cat-dd-btn:hover,
+      .bgs-cat-dd-wrap.bgs-open .bgs-cat-dd-btn {
+        border-color: rgba(212,175,55,0.5);
+        color: #d4af37;
+        box-shadow: 0 0 0 2px rgba(212,175,55,0.07), 0 6px 22px rgba(0,0,0,0.55);
+      }
+
+      /* ── Rotating caret ── */
+      .bgs-cat-caret {
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+        opacity: 0.65;
+        transition: transform 0.32s cubic-bezier(0.16,1,0.3,1), opacity 0.2s;
+      }
+      .bgs-cat-dd-wrap.bgs-open .bgs-cat-caret {
+        transform: rotate(180deg);
+        opacity: 1;
+      }
+
+      /* ── Dropdown menu panel ── */
+      @keyframes bgsCatMenuOpen {
+        from { opacity: 0; transform: translateY(-8px) scaleY(0.94); }
+        to   { opacity: 1; transform: translateY(0)    scaleY(1);    }
+      }
+
+      .bgs-cat-dd-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        min-width: 100%;
+        background: linear-gradient(168deg, #0d0a02 0%, #060502 100%);
+        border: 1px solid rgba(212,175,55,0.22);
+        border-radius: 8px;
+        padding: 0.45rem 0 0.4rem;
+        z-index: 99999;
+        box-shadow: 0 22px 56px rgba(0,0,0,0.92), 0 0 0 1px rgba(212,175,55,0.05), inset 0 1px 0 rgba(212,175,55,0.08);
+        display: none;
+        transform-origin: top center;
+        overflow: hidden;
+      }
+      .bgs-cat-dd-wrap.bgs-open .bgs-cat-dd-menu {
+        display: block;
+        animation: bgsCatMenuOpen 0.24s cubic-bezier(0.16,1,0.3,1) forwards;
+      }
+      /* Gold shimmer line at top of panel */
+      .bgs-cat-dd-menu::before {
+        content: '';
+        display: block;
+        height: 1px;
+        margin: 0 0.8rem 0.4rem;
+        background: linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.45) 50%, transparent 100%);
+      }
+
+      /* ── Menu items ── */
+      .bgs-cat-dd-item {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 0.5rem 1.05rem;
+        font-size: 0.64rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.42);
+        background: none;
+        border: none;
+        border-left: 2px solid transparent;
+        cursor: pointer;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        text-align: left;
+        white-space: nowrap;
+        transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+        box-sizing: border-box;
+        outline: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .bgs-cat-dd-item:focus { outline: none; }
+      .bgs-cat-dd-item:hover {
+        color: rgba(212,175,55,0.88);
+        background: rgba(212,175,55,0.06);
+        border-left-color: rgba(212,175,55,0.4);
+      }
+      .bgs-cat-dd-item.bgs-cat-active {
+        color: #d4af37;
+        background: rgba(212,175,55,0.09);
+        border-left-color: #d4af37;
+        letter-spacing: 0.18em;
+      }
+
+      /* ── Diamond toggle ── */
+      #bgs-diamond-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.46rem 0.95rem;
+        border-radius: 22px;
+        border: 1px solid rgba(100,160,255,0.22);
+        background: linear-gradient(135deg, rgba(8,12,22,0.97) 0%, rgba(5,8,18,0.97) 100%);
+        color: rgba(140,200,255,0.62);
+        font-size: 0.67rem;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        cursor: pointer;
+        transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+        white-space: nowrap;
+        user-select: none;
+      }
+      #bgs-diamond-toggle:hover {
+        border-color: rgba(100,160,255,0.48);
+        background: rgba(100,160,255,0.09);
+        color: rgba(180,225,255,0.88);
+      }
+      #bgs-diamond-toggle.bgs-diamond-active {
+        border-color: rgba(90,175,255,0.72);
+        background: linear-gradient(135deg, rgba(30,55,120,0.22) 0%, rgba(20,40,100,0.18) 100%);
+        color: #8dd4ff;
+        box-shadow: 0 0 16px rgba(70,145,255,0.42), 0 0 32px rgba(70,145,255,0.16);
+      }
+
+      @media (max-width: 640px) {
+        .bgs-cat-dd-btn { font-size: 0.62rem; min-width: 128px; padding: 0.42rem 0.7rem 0.42rem 0.88rem; }
+        .bgs-cat-dd-item { font-size: 0.6rem; padding: 0.45rem 0.9rem; }
+        #bgs-diamond-toggle { font-size: 0.62rem; padding: 0.42rem 0.78rem; }
+      }
+
+      /* ── SCROLLING RIBBON: pause on hover / press ── */
+      .marquee-track:hover,
+      .marquee-track.bgs-mq-paused { animation-play-state: paused !important; }
+
+      /* ── SCROLLING RIBBON ADMIN EDITOR ── */
+      #bgs-marquee-panel {
+        margin-top: 1.5rem;
+        border-top: 1px solid rgba(212,175,55,0.12);
+        padding-top: 1.5rem;
+      }
+      #bgs-marquee-panel .bgs-mq-title {
+        font-size: 0.62rem; letter-spacing: 0.28em; text-transform: uppercase;
+        color: #9f8a48; margin-bottom: 0.5rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      #bgs-marquee-panel .bgs-mq-sub {
+        font-size: 0.67rem; color: rgba(255,255,255,0.28);
+        margin-bottom: 1rem; line-height: 1.5;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      .bgs-mq-textarea {
+        width: 100%; box-sizing: border-box;
+        background: #0e0e0e; border: 1px solid rgba(212,175,55,0.22);
+        color: #fff; padding: 0.6rem 0.7rem;
+        font-size: 0.82rem; line-height: 1.7; outline: none;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        resize: vertical; min-height: 128px; transition: border-color 0.2s;
+      }
+      .bgs-mq-textarea:focus { border-color: rgba(212,175,55,0.5); }
+      .bgs-mq-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+      .bgs-mq-save {
+        flex: 1; background: #d4af37; color: #0a0a0a; border: none;
+        padding: 0.55rem 0; font-size: 0.58rem; letter-spacing: 0.12em;
+        text-transform: uppercase; cursor: pointer; font-weight: 700;
+        font-family: 'Inter','Helvetica Neue',sans-serif; transition: opacity 0.15s;
+      }
+      .bgs-mq-save:hover { opacity: 0.88; }
+      .bgs-mq-reset {
+        flex: 1; background: none; border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.4); padding: 0.55rem 0; font-size: 0.58rem;
+        letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
+        font-family: inherit; transition: border-color 0.15s, color 0.15s;
+      }
+      .bgs-mq-reset:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.65); }
+      .bgs-mq-tick { display: none; font-size: 0.62rem; color: #4ade80; margin-top: 0.6rem; }
+
+      /* ── HERO PRODUCT DETAIL MODAL ── */
+      #bgs-hpd-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.92);
+        z-index: 100000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+      }
+      #bgs-hpd-overlay.bgs-open { opacity: 1; visibility: visible; }
+      #bgs-hpd-box {
+        background: #0a0a0a;
+        border: 1px solid rgba(212,175,55,0.2);
+        max-width: 840px;
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        max-height: 88vh;
+        overflow: hidden;
+        box-shadow: 0 48px 120px rgba(0,0,0,0.98);
+        position: relative;
+      }
+      #bgs-hpd-img {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        background: #0a0a0a;
+        overflow: hidden;
+      }
+      #bgs-hpd-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+      #bgs-hpd-img .bgs-slideshow {
+        position: absolute;
+        inset: 0;
+      }
+      #bgs-hpd-body {
+        padding: 2.5rem 2rem 2rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        /* sit above the image box, which is position:relative and can
+           overflow its grid row on short viewports */
+        position: relative;
+        z-index: 1;
+        background: #0a0a0a;
+      }
+      #bgs-hpd-body::-webkit-scrollbar { width: 4px; }
+      #bgs-hpd-body::-webkit-scrollbar-track { background: #111; }
+      #bgs-hpd-body::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); }
+      #bgs-hpd-close {
+        position: absolute;
+        top: 0.85rem;
+        right: 0.85rem;
+        background: rgba(0,0,0,0.65);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.5);
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 1.1rem;
+        display: flex; align-items: center; justify-content: center;
+        z-index: 6;
+        transition: border-color 0.2s, color 0.2s;
+        line-height: 1;
+        padding: 0;
+        font-family: inherit;
+      }
+      #bgs-hpd-close:hover { border-color: #d4af37; color: #d4af37; }
+      .bgs-hpd-buy {
+        display: block;
+        background: #d4af37;
+        color: #0a0a0a;
+        text-align: center;
+        padding: 0.9rem 1.5rem;
+        font-size: 0.63rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        font-weight: 700;
+        text-decoration: none;
+        margin-top: auto;
+        transition: opacity 0.15s;
+      }
+      .bgs-hpd-buy:hover { opacity: 0.88; }
+      @media (max-width: 640px) {
+        /* Stack as plain blocks rather than grid rows: a grid row can be
+           compressed shorter than the square image, which then overflows
+           and covers the details underneath. */
+        #bgs-hpd-box {
+          display: block;
+          max-height: 92vh;
+          overflow-y: auto;
+        }
+        #bgs-hpd-img { max-height: 92vw; aspect-ratio: 1 / 1; }
+        #bgs-hpd-body { padding: 1.5rem 1.25rem 3rem; overflow-y: visible; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <!-- ═══════════════════════════════════════════
+         BGS JEWELRY — FEATURE INJECTION SCRIPT
+         ═══════════════════════════════════════════ -->
+    <script id="bgs-features">
+    (function () {
+      'use strict';
+
+      /* ─────────────────────────────────────────
+         INVENTORY IMAGE PIPELINE
+         Normalizes CSV/Excel image values (share links,
+         base64, http URLs) so they actually render.
+         ───────────────────────────────────────── */
+      var BGS_IMG_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%230d0d0d'/%3E%3Cg fill='none' stroke='%23d4af37' stroke-opacity='0.35' stroke-width='6'%3E%3Cpath d='M300 180 L390 260 L300 420 L210 260 Z'/%3E%3Cpath d='M210 260 L390 260 M300 180 L260 260 L300 420 M300 180 L340 260 L300 420'/%3E%3C/g%3E%3Ctext x='300' y='500' text-anchor='middle' fill='%23d4af37' fill-opacity='0.4' font-family='Georgia, serif' font-size='26' font-style='italic'%3EImage unavailable%3C/text%3E%3C/svg%3E";
+
+      // Demo products originally shipped with Unsplash photos that have since
+      // been deleted — swap any saved copy of a dead URL for a live equivalent.
+      var BGS_DEAD_IMGS = {
+        '1554473675-d5d5ba2b9df9': '1608042314453-ae338d80c427',
+        '1506630268986-eae35de75f29': '1515562141207-7a88fb7ce338',
+        '1616169201999-849a46b419ae': '1611591437281-460bfbe1220a',
+        '1629224316810-9d8805b95f10': '1599643478518-a784e5dc4c8f',
+        '1633109742-12c2b018fd75': '1586104195538-050b9f74f58e',
+        '1618675979303-10a1d7e0fd15': '1603974372039-adc49044b6bd',
+        '1541643600914-78b084683702': '1588444837495-c6cfeb53f32d',
+        '1592923617313-dd10c4c9e4f4': '1611652022419-a9419f74343d',
+        '1574017985970-2b7eabcac5e5': '1535632066927-ab7c9ab60908',
+        '1603974372049-aacb81a577e4': '1617038260897-41a1f14a8ca0',
+        '1601160130925-89d5c5e24b9e': '1573408301185-9146fe634ad0'
+      };
+      function bgsFixDeadDefault(url) {
+        if (typeof url !== 'string' || url.indexOf('images.unsplash.com/photo-') < 0) return url;
+        for (var k in BGS_DEAD_IMGS) {
+          if (url.indexOf('photo-' + k) >= 0) {
+            return 'https://images.unsplash.com/photo-' + BGS_DEAD_IMGS[k] + '?w=600&h=600&fit=crop&q=80&auto=format';
+          }
+        }
+        return url;
+      }
+
+      var B64_MAGIC = [
+        ['iVBORw', 'image/png'],
+        ['/9j/',   'image/jpeg'],
+        ['R0lGOD', 'image/gif'],
+        ['UklGR',  'image/webp'],
+        ['PHN2Zy', 'image/svg+xml']
+      ];
+
+      window.bgsNormalizeImg = function (raw) {
+        if (raw == null) return '';
+        var s = String(raw).trim().replace(/^["']+/, '').replace(/["']+$/, '').trim();
+        if (!s) return '';
+        // Excel error values — e.g. an in-cell picture reads as "#VALUE!" text.
+        // Treat as empty so the embedded-image extractor can fill the slot.
+        if (/^#(VALUE|NAME|REF|NULL|DIV|N\/A|NUM|GETTING_DATA)/i.test(s)) return '';
+        // WPS Office in-cell pictures leave a DISPIMG formula/ID as the cell value
+        if (/^=?\s*_?xlfn\.?DISPIMG/i.test(s) || /^ID_[0-9A-Za-z]{8,}$/.test(s)) return '';
+        var m, i;
+
+        // Raw base64 pasted without the data: prefix — detect type by magic bytes
+        if (!/^data:/i.test(s) && s.length > 50 && /^[A-Za-z0-9+/=\s]+$/.test(s)) {
+          for (i = 0; i < B64_MAGIC.length; i++) {
+            if (s.indexOf(B64_MAGIC[i][0]) === 0) {
+              return 'data:' + B64_MAGIC[i][1] + ';base64,' + s.replace(/\s+/g, '');
+            }
+          }
+        }
+
+        // Data URIs: validate payload (Excel truncates cells at 32,767 chars and
+        // unquoted CSV cells split at the comma — both corrupt base64 images)
+        if (/^data:/i.test(s)) {
+          var comma = s.indexOf(',');
+          if (comma < 0 || comma === s.length - 1) return '';
+          if (/;base64/i.test(s.slice(0, comma))) {
+            var payload = s.slice(comma + 1).replace(/\s+/g, '');
+            if (payload.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(payload)) return '';
+            return s.slice(0, comma + 1) + payload;
+          }
+          return s;
+        }
+
+        if (/^\/\//.test(s)) s = 'https:' + s;                                  // protocol-relative
+        if (!/^[a-z][a-z0-9+.-]*:/i.test(s) && /^[\w-]+(\.[\w-]+)+\//.test(s)) s = 'https://' + s; // bare domain
+        s = s.replace(/^http:\/\//i, 'https://');                               // avoid mixed-content blocks
+
+        // Google Drive share links → proxy through our server so no Google cookies needed
+        if (/drive\.google\.com|docs\.google\.com|drive\.usercontent\.google\.com/i.test(s)) {
+          m = s.match(/\/file\/d\/([\w-]{10,})/) || s.match(/[?&]id=([\w-]{10,})/);
+          if (m) return '/api/drive-img?id=' + m[1];
+        }
+        // Dropbox share links → direct content host
+        try {
+          var u = new URL(s);
+          if (/(^|\.)dropbox\.com$/i.test(u.hostname)) {
+            u.hostname = 'dl.dropboxusercontent.com';
+            u.searchParams.delete('dl');
+            s = u.toString();
+          }
+        } catch (e) {}
+        // GitHub blob pages → raw file
+        m = s.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/i);
+        if (m) s = 'https://raw.githubusercontent.com/' + m[1] + '/' + m[2] + '/' + m[3];
+        // Imgur page link → direct image
+        m = s.match(/^https:\/\/(?:www\.)?imgur\.com\/([A-Za-z0-9]{5,10})$/);
+        if (m) s = 'https://i.imgur.com/' + m[1] + '.jpg';
+        // OneDrive short links → direct download
+        if (/^https:\/\/1drv\.ms\//i.test(s)) {
+          try {
+            var b64 = btoa(s).replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-');
+            s = 'https://api.onedrive.com/v1.0/shares/u!' + b64 + '/root/content';
+          } catch (e2) {}
+        }
+        return s;
+      };
+
+      function bgsShrinkDataUri(dataUri, cb) {
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var MAX = 900;
+            var scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+            var c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(img.naturalWidth * scale));
+            c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+            var out = c.toDataURL('image/jpeg', 0.82);
+            cb(out.length < dataUri.length ? out : null);
+          } catch (e) { cb(null); }
+        };
+        img.onerror = function () { cb(null); };
+        img.src = dataUri;
+      }
+
+      /* ─────────────────────────────────────────
+         EMBEDDED SPREADSHEET IMAGES
+         Excel stores pictures pasted onto the sheet
+         inside the .xlsx zip (xl/media) — the cell text
+         stays empty, so parsers never see them. This
+         extracts those pictures and attaches each one to
+         the row it is anchored on.
+         ───────────────────────────────────────── */
+      function bgsReadZip(bytes) {
+        var i;
+        for (i = bytes.length - 22; i >= Math.max(0, bytes.length - 66000); i--) {
+          if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b && bytes[i + 2] === 0x05 && bytes[i + 3] === 0x06) break;
+        }
+        if (i < 0) return Promise.resolve({});
+        var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        var count = dv.getUint16(i + 10, true);
+        var p = dv.getUint32(i + 16, true);
+        var entries = [];
+        var td = new TextDecoder();
+        for (var n = 0; n < count; n++) {
+          if (dv.getUint32(p, true) !== 0x02014b50) break;
+          var method = dv.getUint16(p + 10, true);
+          var csize = dv.getUint32(p + 20, true);
+          var nameLen = dv.getUint16(p + 28, true);
+          var extraLen = dv.getUint16(p + 30, true);
+          var cmtLen = dv.getUint16(p + 32, true);
+          var lho = dv.getUint32(p + 42, true);
+          var name = td.decode(bytes.subarray(p + 46, p + 46 + nameLen));
+          if (/^xl\/(drawings\/|media\/|richData\/)/.test(name) ||
+              /^xl\/worksheets\/sheet\d+\.xml$/.test(name) ||
+              name === 'xl/metadata.xml' ||
+              name === 'xl/cellimages.xml' ||
+              name === 'xl/_rels/cellimages.xml.rels') {
+            entries.push({ name: name, method: method, csize: csize, lho: lho });
+          }
+          p += 46 + nameLen + extraLen + cmtLen;
+        }
+        return Promise.all(entries.map(function (e) {
+          var lnl = dv.getUint16(e.lho + 26, true);
+          var lel = dv.getUint16(e.lho + 28, true);
+          var start = e.lho + 30 + lnl + lel;
+          var data = bytes.subarray(start, start + e.csize);
+          if (e.method === 0) return Promise.resolve({ name: e.name, data: data });
+          var ds = new DecompressionStream('deflate-raw');
+          return new Response(new Blob([data]).stream().pipeThrough(ds)).arrayBuffer()
+            .then(function (ab) { return { name: e.name, data: new Uint8Array(ab) }; })
+            .catch(function () { return { name: e.name, data: null }; });
+        })).then(function (list) {
+          var map = {};
+          list.forEach(function (x) { if (x.data) map[x.name] = x.data; });
+          return map;
+        });
+      }
+
+      function bgsParseAnchors(zip) {
+        var anchors = [];
+        var td = new TextDecoder();
+        Object.keys(zip).forEach(function (name) {
+          var m = name.match(/^xl\/drawings\/(drawing\d+)\.xml$/);
+          if (!m) return;
+          var rels = {};
+          var relsName = 'xl/drawings/_rels/' + m[1] + '.xml.rels';
+          if (zip[relsName]) {
+            var rdoc = new DOMParser().parseFromString(td.decode(zip[relsName]), 'application/xml');
+            var rl = rdoc.getElementsByTagName('Relationship');
+            for (var i = 0; i < rl.length; i++) rels[rl[i].getAttribute('Id')] = rl[i].getAttribute('Target');
+          }
+          var doc = new DOMParser().parseFromString(td.decode(zip[name]), 'application/xml');
+          ['twoCellAnchor', 'oneCellAnchor', 'absoluteAnchor'].forEach(function (g) {
+            var list = doc.getElementsByTagNameNS('*', g);
+            for (var i = 0; i < list.length; i++) {
+              var el = list[i];
+              var row = 0;
+              var from = el.getElementsByTagNameNS('*', 'from');
+              if (from.length) {
+                var rowEl = from[0].getElementsByTagNameNS('*', 'row');
+                if (rowEl.length) row = parseInt(rowEl[0].textContent, 10) || 0;
+              }
+              var blips = el.getElementsByTagNameNS('*', 'blip');
+              if (!blips.length) continue;
+              var RELNS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+              var rid = blips[0].getAttribute('r:embed') || blips[0].getAttributeNS(RELNS, 'embed') ||
+                blips[0].getAttribute('r:link') || blips[0].getAttributeNS(RELNS, 'link');
+              var target = rels[rid];
+              if (!target) continue;
+              if (/^https?:\/\//i.test(target)) {
+                anchors.push({ row: row, url: target }); // picture inserted as "link to file" (web URL)
+              } else {
+                var clean = target.replace(/^(\.\.\/|\/)+/, '');
+                anchors.push({ row: row, media: clean.indexOf('xl/') === 0 ? clean : 'xl/' + clean });
+              }
+            }
+          });
+        });
+        anchors.sort(function (a, b) { return a.row - b.row; });
+        return anchors;
+      }
+
+      // Excel 365 "Place in Cell" pictures. The cell only holds a #VALUE! marker
+      // plus a vm= index; the picture lives in xl/media, reached through:
+      // vm → xl/metadata.xml (valueMetadata → XLRICHVALUE futureMetadata)
+      //    → xl/richData/richValueRel.xml (ordered) → its .rels → media file.
+      function bgsParseInCellImages(zip) {
+        var td = new TextDecoder();
+        var relFile = zip['xl/richData/richValueRel.xml'];
+        var relRels = zip['xl/richData/_rels/richValueRel.xml.rels'];
+        if (!relFile || !relRels) return [];
+        var i, j;
+
+        var relDoc = new DOMParser().parseFromString(td.decode(relFile), 'application/xml');
+        var relEls = relDoc.getElementsByTagNameNS('*', 'rel');
+        var orderedRids = [];
+        for (i = 0; i < relEls.length; i++) {
+          orderedRids.push(relEls[i].getAttribute('r:id') ||
+            relEls[i].getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id'));
+        }
+
+        var rmap = {};
+        var rdoc = new DOMParser().parseFromString(td.decode(relRels), 'application/xml');
+        var rl = rdoc.getElementsByTagName('Relationship');
+        for (i = 0; i < rl.length; i++) {
+          var ct = String(rl[i].getAttribute('Target')).replace(/^(\.\.\/|\/)+/, '');
+          rmap[rl[i].getAttribute('Id')] = ct.indexOf('xl/') === 0 ? ct : 'xl/' + ct;
+        }
+
+        // vm (1-based) → rich-value index; fall back to sequential when absent
+        var vmToRv = null;
+        if (zip['xl/metadata.xml']) {
+          try {
+            var mdoc = new DOMParser().parseFromString(td.decode(zip['xl/metadata.xml']), 'application/xml');
+            var rvbIdx = [];
+            var fms = mdoc.getElementsByTagNameNS('*', 'futureMetadata');
+            for (i = 0; i < fms.length; i++) {
+              if ((fms[i].getAttribute('name') || '') !== 'XLRICHVALUE') continue;
+              var rvbs = fms[i].getElementsByTagNameNS('*', 'rvb');
+              for (j = 0; j < rvbs.length; j++) rvbIdx.push(parseInt(rvbs[j].getAttribute('i'), 10));
+            }
+            var vms = mdoc.getElementsByTagNameNS('*', 'valueMetadata');
+            if (vms.length) {
+              vmToRv = [];
+              var bks = vms[0].getElementsByTagNameNS('*', 'bk');
+              for (i = 0; i < bks.length; i++) {
+                var rc = bks[i].getElementsByTagNameNS('*', 'rc');
+                var v = rc.length ? parseInt(rc[0].getAttribute('v'), 10) : i;
+                vmToRv.push(rvbIdx.length > v ? rvbIdx[v] : v);
+              }
+            }
+          } catch (e) { vmToRv = null; }
+        }
+
+        var out = [];
+        Object.keys(zip).forEach(function (name) {
+          if (!/^xl\/worksheets\/sheet\d+\.xml$/.test(name)) return;
+          var sdoc = new DOMParser().parseFromString(td.decode(zip[name]), 'application/xml');
+          var cells = sdoc.getElementsByTagNameNS('*', 'c');
+          for (var k = 0; k < cells.length; k++) {
+            var vm = cells[k].getAttribute('vm');
+            if (!vm) continue;
+            var rowM = (cells[k].getAttribute('r') || '').match(/\d+$/);
+            var row = rowM ? parseInt(rowM[0], 10) - 1 : 0; // 0-based sheet row
+            var rvIdx = parseInt(vm, 10) - 1;
+            var rv = (vmToRv && rvIdx < vmToRv.length) ? vmToRv[rvIdx] : rvIdx;
+            var media = rmap[orderedRids[rv]];
+            if (media) out.push({ row: row, media: media });
+          }
+        });
+        out.sort(function (a, b) { return a.row - b.row; });
+        return out;
+      }
+
+      // WPS Office in-cell pictures: cells hold =DISPIMG("ID",1) formulas and the
+      // pictures live in xl/cellimages.xml (name attr = ID) → rels → xl/media.
+      function bgsParseWpsImages(zip) {
+        var cellImgs = zip['xl/cellimages.xml'];
+        var cellRels = zip['xl/_rels/cellimages.xml.rels'];
+        if (!cellImgs || !cellRels) return [];
+        var td = new TextDecoder();
+        var i;
+
+        var rmap = {};
+        var rdoc = new DOMParser().parseFromString(td.decode(cellRels), 'application/xml');
+        var rl = rdoc.getElementsByTagName('Relationship');
+        for (i = 0; i < rl.length; i++) {
+          var wt = String(rl[i].getAttribute('Target')).replace(/^(\.\.\/|\/)+/, '');
+          rmap[rl[i].getAttribute('Id')] = wt.indexOf('xl/') === 0 ? wt : 'xl/' + wt;
+        }
+
+        // DISPIMG id → media path
+        var idToMedia = {};
+        var cdoc = new DOMParser().parseFromString(td.decode(cellImgs), 'application/xml');
+        var pics = cdoc.getElementsByTagNameNS('*', 'pic');
+        var RELNS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+        for (i = 0; i < pics.length; i++) {
+          var nv = pics[i].getElementsByTagNameNS('*', 'cNvPr');
+          var blip = pics[i].getElementsByTagNameNS('*', 'blip');
+          if (!nv.length || !blip.length) continue;
+          var rid = blip[0].getAttribute('r:embed') || blip[0].getAttributeNS(RELNS, 'embed');
+          if (nv[0].getAttribute('name') && rmap[rid]) idToMedia[nv[0].getAttribute('name')] = rmap[rid];
+        }
+
+        // find DISPIMG formulas in worksheet cells → row + id
+        var out = [];
+        Object.keys(zip).forEach(function (name) {
+          if (!/^xl\/worksheets\/sheet\d+\.xml$/.test(name)) return;
+          var sdoc = new DOMParser().parseFromString(td.decode(zip[name]), 'application/xml');
+          var fs = sdoc.getElementsByTagNameNS('*', 'f');
+          for (var k = 0; k < fs.length; k++) {
+            var fm = (fs[k].textContent || '').match(/DISPIMG\s*\(\s*"([^"]+)"/i);
+            if (!fm || !idToMedia[fm[1]]) continue;
+            var cell = fs[k].parentNode;
+            var rowM = ((cell && cell.getAttribute) ? cell.getAttribute('r') || '' : '').match(/\d+$/);
+            var row = rowM ? parseInt(rowM[0], 10) - 1 : 0;
+            out.push({ row: row, media: idToMedia[fm[1]] });
+          }
+        });
+        out.sort(function (a, b) { return a.row - b.row; });
+        return out;
+      }
+
+      function bgsBytesToDataUri(u8, name) {
+        var ext = (String(name).split('.').pop() || '').toLowerCase();
+        var mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif'
+          : ext === 'webp' ? 'image/webp' : ext === 'svg' ? 'image/svg+xml' : 'image/jpeg';
+        var parts = [];
+        for (var i = 0; i < u8.length; i += 0x8000) {
+          parts.push(String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)));
+        }
+        return 'data:' + mime + ';base64,' + btoa(parts.join(''));
+      }
+
+      // Called synchronously by the patched parser; fills item.img in place
+      // as extraction completes (the objects live on in React state).
+      window.bgsSheetImgs = function (buf, items) {
+        try {
+          window.bgsXlsPictureWarning = false;
+          if (!buf || !items || !items.length) return items;
+          // Normalize multi-URL image cells (comma/semicolon/pipe separated)
+          items.forEach(function (it) {
+            if (it && it.img) it.img = window.bgsNormalizeMultiImg(it.img);
+          });
+          var bytes = new Uint8Array(buf);
+          // old binary .xls (OLE format) — pictures inside it can't be read
+          if (bytes[0] === 0xD0 && bytes[1] === 0xCF && bytes[2] === 0x11 && bytes[3] === 0xE0) {
+            window.bgsXlsPictureWarning = true;
+            return items;
+          }
+          if (!window.DecompressionStream) return items;
+          if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) return items; // not a zip → csv, nothing embedded
+          bgsReadZip(bytes).then(function (zip) {
+            // pictures placed over cells (drawings) + in-cell pictures (Excel 365 + WPS)
+            var anchors = bgsParseAnchors(zip)
+              .concat(bgsParseInCellImages(zip))
+              .concat(bgsParseWpsImages(zip));
+            if (!anchors.length) return;
+            anchors.sort(function (a, b) { return a.row - b.row; });
+            var anchorImg = function (a) {
+              if (a.url) return window.bgsNormalizeImg(a.url); // "link to file" web picture
+              return zip[a.media] ? bgsBytesToDataUri(zip[a.media], a.media) : '';
+            };
+            var headerRow = typeof window.bgsHeaderRow === 'number' ? window.bgsHeaderRow : 0;
+            var assigned = 0;
+            anchors.forEach(function (a) {
+              var idx = a.row - headerRow - 1; // sheet row → parsed item index
+              if (idx < 0 || idx >= items.length) return;
+              var it = items[idx];
+              if (!it || it.img) return;
+              var v = anchorImg(a);
+              if (!v) return;
+              it.img = v;
+              assigned++;
+            });
+            // fallback: anchor rows didn't line up but counts match — pair in order
+            if (!assigned) {
+              var empties = items.filter(function (it) { return it && !it.img; });
+              if (anchors.length === empties.length) {
+                anchors.forEach(function (a, i) {
+                  var v = anchorImg(a);
+                  if (v) { empties[i].img = v; assigned++; }
+                });
+              }
+            }
+            // keep browser storage healthy: downscale big embedded photos
+            items.forEach(function (it) {
+              if (it && it.img && it.img.indexOf('data:image') === 0 && it.img.length > 150000) {
+                bgsShrinkDataUri(it.img, function (smaller) { if (smaller) it.img = smaller; });
+              }
+            });
+            if (assigned) {
+              console.log('[BGS] Attached ' + assigned + ' embedded spreadsheet image(s) to parsed rows.');
+              setTimeout(updateImportImageReport, 120);
+            }
+          });
+        } catch (e) {
+          console.log('[BGS] Embedded image extraction failed:', e.message);
+        }
+        return items;
+      };
+
+      var _origSetItem = Storage.prototype.setItem;
+      var _origGetItem = Storage.prototype.getItem;
+
+      /* ── INVENTORY FILTER (diamond mode + category) ──
+         Override getItem so React sees pre-filtered inventory without any
+         React state manipulation. Only active on the /inventory hash route. */
+      Storage.prototype.getItem = function (key) {
+        var val = _origGetItem.call(this, key);
+        if (key === 'fg_inventory' && this === window.localStorage) {
+          var h = window.location.hash || '';
+          if (h.indexOf('/inventory') < 0 && h.indexOf('/collection') < 0) return val;
+          var catFilter = window.bgsCategoryFilter || 'All';
+          var diamondMode = !!window.bgsDiamondMode;
+          if (!diamondMode && catFilter === 'All') return val;
+          try {
+            var items = JSON.parse(val || '[]');
+            items = items.filter(function (it) {
+              if (!it) return false;
+              var isDiamond = !!it.labGrown;
+              if (diamondMode && catFilter === 'All') return isDiamond;
+              if (diamondMode && catFilter !== 'All') return isDiamond && it.category === catFilter;
+              if (!diamondMode && catFilter !== 'All') return !isDiamond && it.category === catFilter;
+              return true;
+            });
+            return JSON.stringify(items);
+          } catch (e) {}
+        }
+        return val;
+      };
+
+      function bgsRescueOversizedInventory(val) {
+        var items;
+        try { items = JSON.parse(val); } catch (e) { items = null; }
+        if (!Array.isArray(items)) {
+          alert('Could not save inventory: browser storage is full (~5 MB limit).');
+          return;
+        }
+        var big = items.filter(function (it) {
+          return it && typeof it.img === 'string' && it.img.indexOf('data:image') === 0 && it.img.length > 120000;
+        });
+        if (!big.length) {
+          alert('Could not save inventory: browser storage is full (~5 MB limit). Remove some items, or use image URLs in the CSV instead of embedded base64 images.');
+          return;
+        }
+        var done = 0;
+        big.forEach(function (it) {
+          bgsShrinkDataUri(it.img, function (smaller) {
+            if (smaller) it.img = smaller;
+            done++;
+            if (done !== big.length) return;
+            try {
+              _origSetItem.call(localStorage, 'fg_inventory', JSON.stringify(items));
+              window.dispatchEvent(new Event('fg_inventory_updated'));
+              console.log('[BGS] Embedded images were compressed to fit browser storage.');
+            } catch (e2) {
+              items.forEach(function (x) {
+                if (x && typeof x.img === 'string' && x.img.length > 120000) x.img = '';
+              });
+              try {
+                _origSetItem.call(localStorage, 'fg_inventory', JSON.stringify(items));
+                window.dispatchEvent(new Event('fg_inventory_updated'));
+                alert('Some embedded images were too large for browser storage and were removed. Tip: host images and put their URLs in the CSV instead of embedding base64.');
+              } catch (e3) {
+                alert('Could not save inventory: browser storage is full (~5 MB limit).');
+              }
+            }
+          });
+        });
+      }
+
+      // Normalize every image on any inventory write (CSV import, add form, edits)
+      Storage.prototype.setItem = function (key, val) {
+        if ((key === 'fg_inventory' || key === 'fg_hero_products') && this === window.localStorage) {
+          try {
+            var items = JSON.parse(val);
+            if (Array.isArray(items)) {
+              var changed = false;
+              items.forEach(function (it) {
+                if (it && typeof it.img === 'string') {
+                  var parts = it.img.split('|||');
+                  var fixedParts = parts.map(function (p) {
+                    return window.bgsNormalizeImg(bgsFixDeadDefault(p.trim()));
+                  }).filter(Boolean);
+                  var fixed = fixedParts.join('|||');
+                  if (fixed !== it.img) { it.img = fixed; changed = true; }
+                }
+              });
+              if (changed) val = JSON.stringify(items);
+            }
+          } catch (e) {}
+          try {
+            var ret = _origSetItem.call(this, key, val);
+            bgsSyncToServer();
+            return ret;
+          } catch (err) {
+            if (key === 'fg_inventory') {
+              bgsRescueOversizedInventory(val); // storage quota hit — shrink images and retry
+              return;
+            }
+            throw err;
+          }
+        }
+        // Sync any other fg_* key (admin password, settings, etc.) to server too
+        if (key.startsWith('fg_') && this === window.localStorage) {
+          _origSetItem.call(this, key, val);
+          bgsSyncToServer();
+          return;
+        }
+        return _origSetItem.call(this, key, val);
+      };
+
+      /* ─────────────────────────────────────────
+         UNIVERSAL LIVE SYNC
+         Pushes ALL fg_* keys (inventory, passwords, settings) to server
+         on every change. Pulls on page load + every 15 s.
+         No password gates — server stores whatever is pushed.
+         ───────────────────────────────────────── */
+      var _bgsSyncTimer = null;
+      var _lastPulledSig = '';
+
+      function bgsSyncToServer() {
+        clearTimeout(_bgsSyncTimer);
+        _bgsSyncTimer = setTimeout(function () {
+          var snapshot = {};
+          try {
+            for (var i = 0; i < localStorage.length; i++) {
+              var k = localStorage.key(i);
+              if (k && k.startsWith('fg_')) snapshot[k] = _origGetItem.call(localStorage, k);
+            }
+            // Strip large data URIs from inventory to stay under 6 MB
+            if (snapshot['fg_inventory']) {
+              try {
+                var _inv = JSON.parse(snapshot['fg_inventory']);
+                snapshot['fg_inventory'] = JSON.stringify(_inv.map(function (it) {
+                  if (!it) return it;
+                  var copy = Object.assign({}, it);
+                  if (typeof copy.img === 'string' && copy.img.indexOf('data:image') === 0 && copy.img.length > 2000) copy.img = '';
+                  return copy;
+                }));
+              } catch (e) {}
+            }
+          } catch (e) { return; }
+
+          // Primary path: Firebase Firestore (syncs to every device in real time)
+          if (window.bgsDB) {
+            window.bgsDB.collection('bgs_sync').doc('snapshot')
+              .set({ json: JSON.stringify(snapshot), ts: Date.now() })
+              .then(function () { console.log('[BGS] Synced to Firebase.'); })
+              .catch(function (err) { console.warn('[BGS] Firebase sync failed:', err.message); });
+            return;
+          }
+
+          // Fallback (only when Firebase isn't configured): old Netlify function
+          fetch('/api/inventory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(snapshot)
+          }).then(function (r) {
+            if (r.ok) console.log('[BGS] Synced to server.');
+            else r.text().then(function (t) { console.warn('[BGS] Sync failed:', r.status, t); });
+          }).catch(function (err) {
+            console.warn('[BGS] Sync error:', err.message);
+          });
+        }, 600);
+      }
+
+      // Write a snapshot fetched from the cloud into this device's localStorage.
+      function bgsApplySnapshot(snapshot) {
+        if (!snapshot || typeof snapshot !== 'object') return;
+        var sig = JSON.stringify(snapshot);
+        if (sig === _lastPulledSig) return;
+        _lastPulledSig = sig;
+        var changed = false;
+        Object.keys(snapshot).forEach(function (k) {
+          if (!k.startsWith('fg_') || snapshot[k] === null) return;
+          if (_origGetItem.call(localStorage, k) !== snapshot[k]) {
+            _origSetItem.call(localStorage, k, snapshot[k]);
+            changed = true;
+          }
+        });
+        if (changed) {
+          console.log('[BGS] Applied update from cloud.');
+          window.dispatchEvent(new Event('fg_inventory_updated'));
+        }
+      }
+
+      // Primary path: live Firestore listener — pushes changes to every open
+      // device the instant another device saves. No polling needed.
+      function bgsStartFirebaseSync() {
+        try {
+          window.bgsDB.collection('bgs_sync').doc('snapshot').onSnapshot(
+            function (doc) {
+              if (!doc.exists) return;
+              var d = doc.data() || {};
+              var snapshot;
+              try { snapshot = JSON.parse(d.json || '{}'); }
+              catch (e) { return; }
+              bgsApplySnapshot(snapshot);
+            },
+            function (err) { console.warn('[BGS] Firebase listener error:', err.message); }
+          );
+          console.log('[BGS] Listening for live inventory updates.');
+        } catch (e) {
+          console.warn('[BGS] Could not start Firebase listener:', e.message);
+        }
+      }
+
+      // Fallback (only when Firebase isn't configured): poll the old Netlify function.
+      function bgsPullFromServer() {
+        fetch('/api/inventory', { cache: 'no-store' })
+          .then(function (r) {
+            if (!r.ok) {
+              r.text().then(function (t) { console.warn('[BGS] Pull failed (' + r.status + '):', t); });
+              return null;
+            }
+            return r.json();
+          })
+          .then(function (snapshot) { bgsApplySnapshot(snapshot); })
+          .catch(function (err) {
+            console.warn('[BGS] Pull error:', err.message);
+          });
+      }
+
+      if (window.bgsDB) {
+        // Cloud sync via Firebase — real-time, no polling.
+        bgsStartFirebaseSync();
+      } else {
+        // On-device fallback: pull on load, then every 15 seconds.
+        bgsPullFromServer();
+        setInterval(bgsPullFromServer, 15000);
+      }
+
+      // One-time migration: normalize images already saved in past imports
+      try {
+        var _rawInv = localStorage.getItem('fg_inventory');
+        if (_rawInv) localStorage.setItem('fg_inventory', _rawInv);
+        var _rawHero = localStorage.getItem('fg_hero_products');
+        if (_rawHero) localStorage.setItem('fg_hero_products', _rawHero);
+      } catch (e) {}
+
+      // Last-line safety net: any image that still fails gets a branded placeholder
+      // (first retrying http → https once for imgs without their own onError handler)
+      document.addEventListener('error', function (e) {
+        var t = e.target;
+        if (!t || t.tagName !== 'IMG' || t.dataset.bgsFbk === '2') return;
+        // Multi-image value (url1|||url2|||…) that React rendered raw and the
+        // trimmer didn't reach before load — recover to the first image instead
+        // of showing the "image unavailable" placeholder. This is the fix for
+        // cards needing a manual refresh to show their picture on a new device.
+        var _raw = t.getAttribute('src') || '';
+        if (_raw.indexOf('|||') >= 0) {
+          t.setAttribute('src', _raw.split('|||')[0].trim());
+          return;
+        }
+        if (t.dataset.bgsFbk !== '1' && /^http:\/\//i.test(t.src)) {
+          t.dataset.bgsFbk = '1';
+          t.src = t.src.replace(/^http:\/\//i, 'https://');
+          return;
+        }
+        t.dataset.bgsFbk = '2';
+        t.src = BGS_IMG_FALLBACK;
+      }, true);
+
+      /* ─────────────────────────────────────────
+         MULTI-IMAGE SLIDESHOW
+         ───────────────────────────────────────── */
+      window.bgsNormalizeMultiImg = function (raw) {
+        if (!raw || typeof raw !== 'string') return raw;
+        // Detect multiple URLs separated by commas, semicolons, newlines, or pipes
+        // Only split if we see at least two URL-like segments
+        var delim = raw.indexOf('|||') >= 0 ? '|||'
+                  : /https?:\/\/.*[,;\n|].*https?:\/\//i.test(raw) ? /[,;\n|]+/
+                  : null;
+        if (!delim) return raw;
+        var parts = raw.split(delim).map(function (p) { return p.trim(); }).filter(Boolean);
+        if (parts.length <= 1) return raw;
+        return parts.map(function (p) { return window.bgsNormalizeImg(p); }).filter(Boolean).join('|||');
+      };
+
+      function bgsGetImgList(imgStr) {
+        if (!imgStr || typeof imgStr !== 'string') return [];
+        return imgStr.split('|||').map(function (s) { return s.trim(); }).filter(Boolean);
+      }
+
+      function bgsBuildSlideshow(imgs, altText) {
+        var wrap = document.createElement('div');
+        wrap.className = 'bgs-slideshow';
+        wrap.dataset.bgsIdx = '0';
+
+        imgs.forEach(function (src, i) {
+          var img = document.createElement('img');
+          img.src = src;
+          img.alt = (altText || '') + (imgs.length > 1 ? ' (' + (i + 1) + '/' + imgs.length + ')' : '');
+          img.loading = i === 0 ? 'eager' : 'lazy';
+          if (i === 0) img.className = 'bgs-ss-active';
+          wrap.appendChild(img);
+        });
+
+        if (imgs.length > 1) {
+          var prev = document.createElement('button');
+          prev.className = 'bgs-ss-arrow bgs-ss-prev';
+          prev.innerHTML = '&#8249;';
+          prev.title = 'Previous image';
+          prev.onclick = function (ev) { ev.stopPropagation(); bgsSlideTo(wrap, -1); };
+
+          var next = document.createElement('button');
+          next.className = 'bgs-ss-arrow bgs-ss-next';
+          next.innerHTML = '&#8250;';
+          next.title = 'Next image';
+          next.onclick = function (ev) { ev.stopPropagation(); bgsSlideTo(wrap, 1); };
+
+          var dots = document.createElement('div');
+          dots.className = 'bgs-ss-dots';
+          imgs.forEach(function (_, i) {
+            var dot = document.createElement('button');
+            dot.className = 'bgs-ss-dot' + (i === 0 ? ' bgs-ss-dot-active' : '');
+            dot.onclick = function (ev) { ev.stopPropagation(); bgsSlideGo(wrap, i); };
+            dots.appendChild(dot);
+          });
+
+          wrap.appendChild(prev);
+          wrap.appendChild(next);
+          wrap.appendChild(dots);
+        }
+        return wrap;
+      }
+
+      function bgsSlideTo(wrap, dir) {
+        var slides = wrap.querySelectorAll('img');
+        var idx = parseInt(wrap.dataset.bgsIdx || '0', 10);
+        var next = (idx + dir + slides.length) % slides.length;
+        bgsSlideGo(wrap, next);
+      }
+
+      function bgsSlideGo(wrap, idx) {
+        var slides = wrap.querySelectorAll('img');
+        var dots = wrap.querySelectorAll('.bgs-ss-dot');
+        slides.forEach(function (s, i) {
+          s.classList.toggle('bgs-ss-active', i === idx);
+        });
+        dots.forEach(function (d, i) {
+          d.classList.toggle('bgs-ss-dot-active', i === idx);
+        });
+        wrap.dataset.bgsIdx = String(idx);
+      }
+
+      // Transform modal images into slideshows (cards show first image only)
+      function bgsInjectSlideshows() {
+        var inv = [];
+        try { inv = JSON.parse(localStorage.getItem('fg_inventory') || '[]'); } catch (e) {}
+        var imgMap = {};
+        inv.forEach(function (it) {
+          if (it && it.img && it.img.indexOf('|||') >= 0) {
+            imgMap[it.name] = bgsGetImgList(it.img);
+            var first = bgsGetImgList(it.img)[0];
+            if (first) imgMap[first] = bgsGetImgList(it.img);
+          }
+        });
+
+        if (!Object.keys(imgMap).length) return;
+
+        // Only target images inside the product modal overlay, not inventory cards
+        var modalOverlay = document.querySelector('div[style*="position: fixed"][style*="z-index"]');
+        if (!modalOverlay) return;
+
+        var allImgs = modalOverlay.querySelectorAll('img[style*="object-fit"]');
+        allImgs.forEach(function (img) {
+          if (img.closest('.bgs-slideshow')) return;
+          var parent = img.parentElement;
+          if (!parent || parent.querySelector('.bgs-slideshow')) return;
+
+          var imgs = imgMap[img.alt] || imgMap[img.src] || null;
+          if (!imgs) {
+            for (var key in imgMap) {
+              if (imgMap[key][0] === img.src) {
+                imgs = imgMap[key];
+                break;
+              }
+            }
+          }
+
+          if (!imgs || imgs.length <= 1) return;
+
+          var slideshow = bgsBuildSlideshow(imgs, img.alt);
+          parent.appendChild(slideshow);
+          img.style.display = 'none';
+        });
+      }
+
+      // Fix img src attributes that contain ||| — show only the first URL (cover photo)
+      function bgsFixMultiImgSrc() {
+        var imgs = document.querySelectorAll('img');
+        imgs.forEach(function (img) {
+          if (img.closest('.bgs-slideshow')) return;
+          var src = img.getAttribute('src') || '';
+          if (src.indexOf('|||') >= 0) {
+            img.setAttribute('src', src.split('|||')[0].trim());
+          }
+        });
+      }
+
+      // Trim a single image's ||| src to its first URL, as early as possible
+      function bgsTrimPipeSrc(img) {
+        if (!img || !img.getAttribute || (img.closest && img.closest('.bgs-slideshow'))) return;
+        var s = img.getAttribute('src') || '';
+        if (s.indexOf('|||') >= 0) img.setAttribute('src', s.split('|||')[0].trim());
+      }
+
+      // Run slideshow injection after React renders and on inventory updates
+      var _bgsSSTimer = null;
+      function bgsScheduleSlideshow() {
+        bgsFixMultiImgSrc();          // fix ||| srcs right away so cards never flash a placeholder
+        clearTimeout(_bgsSSTimer);
+        _bgsSSTimer = setTimeout(function () {
+          bgsFixMultiImgSrc();
+          bgsInjectSlideshows();
+        }, 300);
+      }
+
+      // Observe DOM changes to catch React re-renders. Trim ||| srcs on the
+      // newly-added images synchronously (before the browser loads them).
+      var _bgsSSObs = new MutationObserver(function (mutations) {
+        var sched = false;
+        for (var i = 0; i < mutations.length; i++) {
+          var added = mutations[i].addedNodes;
+          for (var j = 0; j < added.length; j++) {
+            var node = added[j];
+            if (!node || node.nodeType !== 1) continue;
+            if (node.tagName === 'IMG') bgsTrimPipeSrc(node);
+            if (node.querySelectorAll) {
+              var inner = node.querySelectorAll('img');
+              for (var k = 0; k < inner.length; k++) bgsTrimPipeSrc(inner[k]);
+            }
+            sched = true;
+          }
+        }
+        if (sched) bgsScheduleSlideshow();
+      });
+      _bgsSSObs.observe(document.body, { childList: true, subtree: true });
+      window.addEventListener('fg_inventory_updated', bgsScheduleSlideshow);
+      window.addEventListener('hashchange', function () { setTimeout(bgsScheduleSlideshow, 500); });
+      setTimeout(bgsScheduleSlideshow, 1000);
+
+      /* ─────────────────────────────────────────
+         GOLD PRICE CONSTANTS & STORAGE
+         ───────────────────────────────────────── */
+      var GOLD_KEYS = {
+        '24K': 'fg_gold_rate_24k',
+        '22K': 'fg_gold_rate_22k',
+        '21K': 'fg_gold_rate_21k',
+        '18K': 'fg_gold_rate_18k',
+        '14K': 'fg_gold_rate_14k'
+      };
+      var KARAT_RATIOS = {
+        '24K': 24 / 22,
+        '22K': 1,
+        '21K': 21 / 22,
+        '18K': 18 / 22,
+        '14K': 14 / 22
+      };
+      var KARATS = ['24K', '22K', '21K', '18K', '14K'];
+
+      function getAdminRate(k) {
+        var v = localStorage.getItem(GOLD_KEYS[k]);
+        var n = parseFloat(v);
+        return (!isNaN(n) && n > 0) ? n : null;
+      }
+
+      function getCached22K() {
+        try {
+          var raw = localStorage.getItem('fg_gold_cache');
+          if (!raw) return null;
+          var d = JSON.parse(raw);
+          if (Date.now() - d.ts < 30 * 60 * 1000 && d.price >= 150 && d.price <= 900) {
+            return d.price;
+          }
+        } catch (e) {}
+        return null;
+      }
+
+      function computeAllRates(base22K) {
+        var rates = {};
+        for (var i = 0; i < KARATS.length; i++) {
+          var k = KARATS[i];
+          var admin = getAdminRate(k);
+          if (admin !== null) {
+            rates[k] = admin;
+          } else if (liveRates[k]) {
+            rates[k] = liveRates[k];
+          } else {
+            rates[k] = parseFloat((base22K * KARAT_RATIOS[k]).toFixed(2));
+          }
+        }
+        return rates;
+      }
+
+      var currentBase22K = 459.75;
+      var liveRates = {};
+
+      async function fetchLivePrice() {
+        try {
+          var res = await fetch('/api/gold-prices', { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          var data = await res.json();
+          if (data.prices && Array.isArray(data.prices)) {
+            var KARAT_MATCH = [
+              { key: '24K', test: function(t) { return t.includes('24') && t.includes('gold'); } },
+              { key: '22K', test: function(t) { return t.includes('22') && t.includes('gold'); } },
+              { key: '21K', test: function(t) { return t.includes('21') && t.includes('gold'); } },
+              { key: '18K', test: function(t) { return t.includes('18') && t.includes('gold'); } },
+              { key: '14K', test: function(t) { return t.includes('14') && t.includes('gold'); } }
+            ];
+            data.prices.forEach(function(item) {
+              if (!item.type || !item.value) return;
+              var typeLower = item.type.toLowerCase();
+              KARAT_MATCH.forEach(function(km) {
+                if (km.test(typeLower)) {
+                  var match = String(item.value).match(/[\d,]+\.?\d*/);
+                  if (match) {
+                    var price = parseFloat(match[0].replace(/,/g, ''));
+                    if (price >= 100 && price <= 1500) liveRates[km.key] = price;
+                  }
+                }
+              });
+            });
+            if (liveRates['22K']) {
+              localStorage.setItem('fg_gold_cache', JSON.stringify({ price: liveRates['22K'], ts: Date.now() }));
+            }
+          }
+          if (data.error) console.log('[BGS Gold] API error:', data.error);
+        } catch (e) {
+          console.log('[BGS Gold] Fetch error:', e.message);
+        }
+        return liveRates['22K'] || getCached22K() || 459.75;
+      }
+
+      /* ─────────────────────────────────────────
+         GOLD PRICE TICKER WIDGET
+         ───────────────────────────────────────── */
+      function buildTicker() {
+        if (document.getElementById('bgs-gold-ticker')) return;
+        var el = document.createElement('div');
+        el.id = 'bgs-gold-ticker';
+        el.innerHTML =
+          '<button id="bgs-ticker-toggle" onclick="window.bgsToggleTicker()" title="Show / hide gold rates">' +
+            '<span class="bgt-tab-label">Gold Price</span>' +
+          '</button>' +
+          '<div class="bgt-header">' +
+            '<span class="bgt-title">Gold Rates &middot; AED/g</span>' +
+            '<button class="bgt-refresh" title="Refresh gold prices" onclick="window.bgsRefreshGold()">&#8635;</button>' +
+          '</div>' +
+          '<div id="bgt-rows"></div>' +
+          '<div class="bgt-footer">' +
+            '<a class="bgt-source" href="https://dubaicityofgold.com/" target="_blank" rel="noopener">Live &middot; dubaicityofgold.com &#8599;</a>' +
+          '</div>';
+        document.body.appendChild(el);
+        // Closed by default — only reopens if the visitor left it open last time
+        if (localStorage.getItem('bgt_open') === '1') {
+          setTimeout(function() { el.classList.add('bgt-open'); }, 480);
+        }
+      }
+
+      window.bgsToggleTicker = function() {
+        var t = document.getElementById('bgs-gold-ticker');
+        if (!t) return;
+        var opening = !t.classList.contains('bgt-open');
+        t.classList.toggle('bgt-open');
+        try { localStorage.setItem('bgt_open', opening ? '1' : '0'); } catch(e) {}
+      };
+
+      function renderTickerRows(rates) {
+        var container = document.getElementById('bgt-rows');
+        if (!container) return;
+        var html = '';
+        for (var i = 0; i < KARATS.length; i++) {
+          var k = KARATS[i];
+          var price = rates[k];
+          var isAdmin = getAdminRate(k) !== null;
+          var is22 = k === '22K';
+          html +=
+            '<div class="bgt-row' + (is22 ? ' bgt-22k' : '') + '">' +
+              '<span class="bgt-karat">' + k + '</span>' +
+              '<span>' +
+                '<span class="bgt-price">' + price.toFixed(2) + '</span>' +
+                '<span class="bgt-unit">AED</span>' +
+                (isAdmin ? '<span class="bgt-admin-star" title="Admin override">&#9733;</span>' : '') +
+              '</span>' +
+            '</div>';
+        }
+        container.innerHTML = html;
+      }
+
+      window.bgsRefreshGold = async function () {
+        var btn = document.querySelector('#bgs-gold-ticker .bgt-refresh');
+        if (btn) btn.classList.add('spinning');
+        var price = await fetchLivePrice();
+        var admin22 = getAdminRate('22K');
+        currentBase22K = admin22 !== null ? admin22 : price;
+        renderTickerRows(computeAllRates(currentBase22K));
+        if (btn) btn.classList.remove('spinning');
+        // Also refresh the React built-in box
+        var reactRefresh = document.querySelector('[title="Refresh price"]');
+        if (reactRefresh) reactRefresh.click();
+      };
+
+      // Listen for admin gold updates
+      window.addEventListener('bgs_gold_updated', function () {
+        var admin22 = getAdminRate('22K');
+        if (admin22 !== null) currentBase22K = admin22;
+        renderTickerRows(computeAllRates(currentBase22K));
+        // Trigger React component refresh for the 22K rate
+        var reactRefresh = document.querySelector('[title="Refresh price"]');
+        if (reactRefresh) reactRefresh.click();
+      });
+
+      // Also catch the React app's existing rate-save event
+      window.addEventListener('storage', function (e) {
+        if (e.key && e.key.startsWith('fg_gold_rate')) {
+          window.dispatchEvent(new Event('bgs_gold_updated'));
+        }
+      });
+
+      function updateAdminPlaceholders() {
+        KARATS.forEach(function (k) {
+          var inp = document.getElementById('bgs-ag-input-' + k);
+          if (inp && !inp.value && liveRates[k]) {
+            inp.placeholder = 'Live: ' + liveRates[k].toFixed(2);
+          }
+        });
+      }
+
+      async function initGold() {
+        var admin22 = getAdminRate('22K');
+        var cached = getCached22K();
+        if (admin22 !== null) {
+          currentBase22K = admin22;
+        } else if (cached) {
+          currentBase22K = cached;
+        }
+        buildTicker();
+        renderTickerRows(computeAllRates(currentBase22K));
+        // Fetch fresh in background
+        fetchLivePrice().then(function (p) {
+          var a22 = getAdminRate('22K');
+          if (a22 === null) currentBase22K = p;
+          renderTickerRows(computeAllRates(currentBase22K));
+          updateAdminPlaceholders();
+        });
+      }
+
+      // Refresh live price every 5 minutes
+      setInterval(function () {
+        fetchLivePrice().then(function (p) {
+          var a22 = getAdminRate('22K');
+          if (a22 === null) {
+            currentBase22K = p;
+            renderTickerRows(computeAllRates(currentBase22K));
+          }
+        });
+      }, 5 * 60 * 1000);
+
+      /* ─────────────────────────────────────────
+         HERO PRODUCT DETAIL MODAL
+         Opens when a hero card is clicked — shows
+         full product info + buy button, syncs live.
+         ───────────────────────────────────────── */
+      function bgsGetInvItemById(rawId) {
+        try {
+          var inv = JSON.parse(_origGetItem.call(localStorage, 'fg_inventory') || '[]');
+          for (var _i = 0; _i < inv.length; _i++) {
+            if (inv[_i] && String(inv[_i].id) === String(rawId)) return inv[_i];
+          }
+        } catch (e) {}
+        return null;
+      }
+
+      function bgsBuildHpdModal() {
+        if (document.getElementById('bgs-hpd-overlay')) return;
+        var overlay = document.createElement('div');
+        overlay.id = 'bgs-hpd-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.innerHTML =
+          '<div id="bgs-hpd-box">' +
+            '<div id="bgs-hpd-img"></div>' +
+            '<div id="bgs-hpd-body"></div>' +
+            '<button id="bgs-hpd-close" onclick="bgsCloseHpdModal()" aria-label="Close">&times;</button>' +
+          '</div>';
+        overlay.addEventListener('click', function (e) {
+          if (e.target === overlay) bgsCloseHpdModal();
+        });
+        document.body.appendChild(overlay);
+      }
+
+      window.bgsOpenHeroModal = function (id) {
+        bgsBuildHpdModal();
+
+        // Fetch latest hero pool (respects current inventory state)
+        var pool = getHeroPool();
+        var product = null;
+        for (var pi = 0; pi < pool.length; pi++) {
+          if (pool[pi].id === id) { product = pool[pi]; break; }
+        }
+        if (!product) return;
+
+        // For inventory-sourced items get the full record (price, weight, etc.)
+        var invItem = (id.indexOf('inv-') === 0) ? bgsGetInvItemById(id.replace(/^inv-/, '')) : null;
+
+        // ── Image ──
+        var imgEl = document.getElementById('bgs-hpd-img');
+        imgEl.innerHTML = '';
+        var rawImg = (invItem && invItem.img) ? invItem.img : (product.img || '');
+        var imgs = bgsGetImgList(rawImg);
+        if (!imgs.length && rawImg) imgs = [rawImg];
+        if (imgs.length > 1) {
+          imgEl.appendChild(bgsBuildSlideshow(imgs, product.name));
+        } else if (imgs.length === 1) {
+          var si = document.createElement('img');
+          si.src = imgs[0];
+          si.alt = product.name;
+          imgEl.appendChild(si);
+        }
+
+        // ── Details ──
+        var category = (invItem && invItem.category) ? invItem.category : (product.tag || '');
+        var isLab    = invItem ? !!invItem.labGrown : false;
+        var metal    = (invItem && invItem.karat)  ? invItem.karat + 'K Gold' : (product.metal || '');
+        var desc     = (invItem && invItem.desc)   ? invItem.desc             : (product.stone || '');
+        var price    = invItem ? invItem.price  : null;
+        var weight   = invItem ? invItem.weight : null;
+
+        var catLine = escHtml(category) + (isLab ? ' · Lab Diamond' : '');
+        var sub     = [metal, desc].filter(Boolean).join(' · ');
+        var waText  = encodeURIComponent(
+          'Hi! I\'m interested in the *' + product.name + '*' +
+          (sub ? ' (' + sub + ')' : '') +
+          '. Could you please share more details and availability? Thank you!'
+        );
+
+        var html =
+          '<p style="font-size:0.57rem;letter-spacing:0.32em;text-transform:uppercase;color:#d4af37;margin:0 0 0.65rem;font-family:Inter,\'Helvetica Neue\',sans-serif;">' + catLine + '</p>' +
+          '<h2 style="font-family:\'Playfair Display\',Georgia,serif;font-size:1.65rem;font-weight:400;font-style:italic;color:#fff;margin:0 0 1.2rem;letter-spacing:0.02em;line-height:1.25;">' + escHtml(product.name) + '</h2>' +
+          '<div style="width:36px;height:1px;background:rgba(212,175,55,0.35);margin-bottom:1.4rem;"></div>';
+
+        if (sub) {
+          html += '<p style="font-size:0.72rem;color:rgba(255,255,255,0.42);letter-spacing:0.07em;margin:0 0 1.4rem;line-height:1.6;font-family:Inter,\'Helvetica Neue\',sans-serif;">' + escHtml(sub) + '</p>';
+        }
+
+        if (price) {
+          html += '<p style="font-size:1.05rem;color:#d4af37;font-weight:600;letter-spacing:0.04em;margin:0 0 ' + (weight ? '0.25rem' : '1.5rem') + ';font-family:Inter,\'Helvetica Neue\',sans-serif;">AED ' + escHtml(String(price)) + '</p>';
+        }
+        if (weight) {
+          html += '<p style="font-size:0.65rem;color:rgba(255,255,255,0.28);letter-spacing:0.1em;text-transform:uppercase;margin:0 0 1.5rem;font-family:Inter,\'Helvetica Neue\',sans-serif;">' + escHtml(String(weight)) + 'g net weight</p>';
+        }
+
+        html +=
+          '<div style="flex:1;min-height:1.5rem;"></div>' +
+          '<a class="bgs-hpd-buy" href="https://wa.me/971524932609?text=' + waText + '" target="_blank" rel="noopener">Click to Buy</a>';
+
+        document.getElementById('bgs-hpd-body').innerHTML = html;
+
+        var overlay = document.getElementById('bgs-hpd-overlay');
+        void overlay.offsetHeight;
+        overlay.classList.add('bgs-open');
+        document.body.style.overflow = 'hidden';
+      };
+
+      window.bgsCloseHpdModal = function () {
+        var overlay = document.getElementById('bgs-hpd-overlay');
+        if (overlay) overlay.classList.remove('bgs-open');
+        document.body.style.overflow = '';
+      };
+
+      /* ─────────────────────────────────────────
+         HIDE REACT'S BUILT-IN 22K-ONLY PRICE BOX
+         ───────────────────────────────────────── */
+      function hideReactGoldBox() {
+        // The React box contains a button with title="Refresh price"
+        var refreshBtn = document.querySelector('[title="Refresh price"]');
+        if (refreshBtn) {
+          // Walk up to find the outer box (usually 4-5 levels)
+          var el = refreshBtn;
+          for (var i = 0; i < 8; i++) {
+            el = el.parentElement;
+            if (!el || el.id === 'root') break;
+            var s = el.style;
+            // Look for the box that has minWidth:220px or the flex wrapper in inventory
+            if (s && (s.minWidth || s.boxShadow)) {
+              el.style.setProperty('display', 'none', 'important');
+              el.id = 'bgs-react-gold-hidden';
+              return true;
+            }
+          }
+          // Fallback: check computed style
+          el = refreshBtn;
+          for (var j = 0; j < 8; j++) {
+            el = el.parentElement;
+            if (!el || el.id === 'root') break;
+            var computed = window.getComputedStyle(el);
+            if (computed.minWidth && parseInt(computed.minWidth) >= 200 && parseInt(computed.minWidth) <= 300) {
+              el.style.setProperty('display', 'none', 'important');
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      /* ─────────────────────────────────────────
+         NAVIGATION DROPDOWNS
+         ───────────────────────────────────────── */
+      var LAB_ITEMS = [
+        { label: 'Necklaces',    cat: 'Necklaces',  diamond: true  },
+        { label: 'Bracelets',   cat: 'Bracelets',  diamond: true  },
+        { label: 'Rings',       cat: 'Rings',      diamond: true  },
+        { label: 'Earrings',    cat: 'Earrings',   diamond: true  },
+        { label: 'Chains',      cat: 'Chains',     diamond: true  },
+        { label: 'Pendants',    cat: 'Pendants',   diamond: true  },
+        { label: 'Bangles',     cat: 'Bangles',    diamond: true  },
+        { label: 'Loose Diamond', cat: 'All',      diamond: true, loose: true }
+      ];
+      var GOLD_ITEMS = [
+        { label: 'Necklaces',  cat: 'Necklaces' },
+        { label: 'Bracelets',  cat: 'Bracelets' },
+        { label: 'Rings',      cat: 'Rings'     },
+        { label: 'Earrings',   cat: 'Earrings'  },
+        { label: 'Chains',     cat: 'Chains'    },
+        { label: 'Pendants',   cat: 'Pendants'  },
+        { label: 'Bangles',    cat: 'Bangles'   }
+      ];
+
+      window.bgsFilterLab = function (cat, loose) {
+        navigateToInventory(cat, loose ? 'loose' : 'diamond');
+      };
+
+      window.bgsFilterGold = function (cat) {
+        navigateToInventory(cat, '');
+      };
+
+      function navigateToInventory(cat, searchTerm) {
+        // Switch to inventory page via hash routing
+        if (window.location.hash !== '#/inventory') {
+          window.location.hash = '#/inventory';
+        }
+        // Wait for React to render inventory, then apply filters
+        setTimeout(function () {
+          applyFilters(cat, searchTerm);
+        }, 380);
+      }
+
+      function applyFilters(cat, searchTerm) {
+        // If our custom filter UI is active, use it instead of clicking React buttons
+        if (document.getElementById('bgs-cat-dd')) {
+          var label = cat === 'All' ? 'All Jewellery' : (cat || 'All Jewellery');
+          window.bgsCatSelect(cat || 'All', label);
+          if (searchTerm === 'diamond' || searchTerm === 'loose') {
+            window.bgsDiamondMode = true;
+            var dtBtn = document.getElementById('bgs-diamond-toggle');
+            if (dtBtn) dtBtn.classList.add('bgs-diamond-active');
+            window.dispatchEvent(new Event('fg_inventory_updated'));
+          }
+          return;
+        }
+        // Fallback: click React category filter button
+        var buttons = document.querySelectorAll('button');
+        for (var i = 0; i < buttons.length; i++) {
+          var btn = buttons[i];
+          if (btn.textContent.trim() === cat) {
+            btn.click();
+            break;
+          }
+        }
+        // Set search input via React synthetic event
+        var searchInputs = document.querySelectorAll('input[placeholder*="Search"]');
+        for (var j = 0; j < searchInputs.length; j++) {
+          var input = searchInputs[j];
+          var nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+          nativeSetter.call(input, searchTerm || '');
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+
+      /* ─────────────────────────────────────────
+         CUSTOM CATEGORY FILTER BAR
+         Replaces React's row of category buttons with a compact dropdown
+         + a separate Diamond toggle (glows blue when active).
+         Filter logic:
+           – All / no diamond  → show every item (default)
+           – Category / no diamond → non-diamond items of that category
+           – Category + diamond → diamond items of that category
+           – All + diamond → all diamond items
+         ───────────────────────────────────────── */
+      var filterInjected = false;
+      var _bgsFilterContainer = null;
+
+      window.bgsCategoryFilter = 'All';
+      window.bgsDiamondMode = false;
+
+      function _findFilterButtonsContainer() {
+        var buttons = document.querySelectorAll('button');
+        for (var i = 0; i < buttons.length; i++) {
+          if (buttons[i].textContent.trim() !== 'All') continue;
+          var parent = buttons[i].parentElement;
+          if (!parent) continue;
+          var directBtns = Array.prototype.filter.call(parent.children, function (c) {
+            return c.tagName === 'BUTTON';
+          });
+          var texts = directBtns.map(function (b) { return b.textContent.trim(); });
+          if (texts.indexOf('Rings') >= 0 && texts.indexOf('Necklaces') >= 0) return parent;
+        }
+        return null;
+      }
+
+      function injectCategoryFilter() {
+        var onInvPage = (window.location.hash || '').indexOf('/inventory') >= 0;
+
+        if (!onInvPage) {
+          // Leaving inventory page — restore React's buttons
+          if (_bgsFilterContainer) {
+            _bgsFilterContainer.style.removeProperty('display');
+            _bgsFilterContainer = null;
+          }
+          var existing = document.getElementById('bgs-cat-filter');
+          if (existing) existing.parentElement && existing.parentElement.removeChild(existing);
+          window.bgsCategoryFilter = 'All';
+          window.bgsDiamondMode = false;
+          filterInjected = false;
+          return false;
+        }
+
+        // Find React's filter button row and hide it
+        var container = _findFilterButtonsContainer();
+        if (!container) return false;
+        _bgsFilterContainer = container;
+        container.style.setProperty('display', 'none', 'important');
+
+        // Already injected?
+        if (document.getElementById('bgs-cat-filter')) {
+          filterInjected = true;
+          return true;
+        }
+
+        var CAT_OPTIONS = [
+          { val: 'All',       label: 'All Jewellery' },
+          { val: 'Rings',     label: 'Rings'         },
+          { val: 'Necklaces', label: 'Necklaces'     },
+          { val: 'Bracelets', label: 'Bracelets'     },
+          { val: 'Earrings',  label: 'Earrings'      },
+          { val: 'Pendants',  label: 'Pendants'      },
+          { val: 'Chains',    label: 'Chains'        },
+          { val: 'Bangles',   label: 'Bangles'       }
+        ];
+
+        var curCat = window.bgsCategoryFilter || 'All';
+        var curLabel = (CAT_OPTIONS.find(function(o){return o.val===curCat;})||CAT_OPTIONS[0]).label;
+
+        var menuItems = CAT_OPTIONS.map(function (o) {
+          var active = o.val === curCat ? ' bgs-cat-active' : '';
+          return '<button class="bgs-cat-dd-item' + active + '" data-val="' + o.val + '" onclick="bgsCatSelect(\'' + o.val + '\',\'' + o.label + '\')">' + o.label + '</button>';
+        }).join('');
+
+        var wrap = document.createElement('div');
+        wrap.id = 'bgs-cat-filter';
+        wrap.innerHTML =
+          '<div class="bgs-cat-dd-wrap" id="bgs-cat-dd">' +
+            '<button class="bgs-cat-dd-btn" id="bgs-cat-dd-btn" onclick="bgsCatToggle()" aria-haspopup="listbox">' +
+              '<span id="bgs-cat-label">' + curLabel + '</span>' +
+              '<span class="bgs-cat-caret">' +
+                '<svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                  '<path d="M1 1L5 5L9 1" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+                '</svg>' +
+              '</span>' +
+            '</button>' +
+            '<div class="bgs-cat-dd-menu" id="bgs-cat-menu" role="listbox">' + menuItems + '</div>' +
+          '</div>' +
+          '<button id="bgs-diamond-toggle" onclick="bgsDiamondToggle()" title="Show Diamond Items Only">' +
+            '<svg width="9" height="10" viewBox="0 0 9 10" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">' +
+              '<path d="M4.5 1L8 4.5L4.5 9L1 4.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>' +
+              '<path d="M1 4.5H8M2.5 1L4.5 4.5L6.5 1" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>' +
+            '</svg>' +
+            'Diamond' +
+          '</button>';
+
+        container.insertAdjacentElement('beforebegin', wrap);
+
+        // Restore diamond state
+        var dtBtn = document.getElementById('bgs-diamond-toggle');
+        if (dtBtn && window.bgsDiamondMode) dtBtn.classList.add('bgs-diamond-active');
+
+        filterInjected = true;
+        return true;
+      }
+
+      window.bgsCatToggle = function () {
+        var dd = document.getElementById('bgs-cat-dd');
+        if (!dd) return;
+        var isOpen = dd.classList.contains('bgs-open');
+        // Close all other open dropdowns first
+        document.querySelectorAll('.bgs-cat-dd-wrap.bgs-open').forEach(function(el){ el.classList.remove('bgs-open'); });
+        if (!isOpen) dd.classList.add('bgs-open');
+      };
+
+      window.bgsCatSelect = function (val, label) {
+        window.bgsCategoryFilter = val || 'All';
+        // Update label
+        var lbl = document.getElementById('bgs-cat-label');
+        if (lbl) lbl.textContent = label || val;
+        // Update active class
+        document.querySelectorAll('.bgs-cat-dd-item').forEach(function (el) {
+          el.classList.toggle('bgs-cat-active', el.dataset.val === val);
+        });
+        // Close menu
+        var dd = document.getElementById('bgs-cat-dd');
+        if (dd) dd.classList.remove('bgs-open');
+        // Trigger React re-render with filtered inventory
+        window.dispatchEvent(new Event('fg_inventory_updated'));
+      };
+
+      window.bgsDiamondToggle = function () {
+        window.bgsDiamondMode = !window.bgsDiamondMode;
+        var dtBtn = document.getElementById('bgs-diamond-toggle');
+        if (dtBtn) dtBtn.classList.toggle('bgs-diamond-active', !!window.bgsDiamondMode);
+        window.dispatchEvent(new Event('fg_inventory_updated'));
+      };
+
+      function buildNavDropdowns() {
+        // Find "The Collection" in the home page nav
+        var allBtns = document.querySelectorAll('nav button, nav a');
+        var collBtn = null;
+        for (var i = 0; i < allBtns.length; i++) {
+          if (allBtns[i].textContent.trim() === 'The Collection') {
+            collBtn = allBtns[i];
+            break;
+          }
+        }
+        if (!collBtn) return false;
+        if (document.getElementById('bgs-collection-nav')) return true;
+
+        var parentContainer = collBtn.parentElement;
+        if (!parentContainer) return false;
+
+        // Build the dropdown nav container
+        var navWrap = document.createElement('div');
+        navWrap.id = 'bgs-collection-nav';
+
+        // ── Lab Grown Diamonds dropdown ──
+        var labItems = LAB_ITEMS.map(function (item, idx) {
+          var divider = (item.label === 'Loose Diamond') ? '<div class="bgs-dropdown-divider"></div>' : '';
+          return divider +
+            '<button class="bgs-dropdown-item" onclick="bgsFilterLab(\'' + item.cat + '\',' + (item.loose ? 'true' : 'false') + ')">' +
+              item.label +
+            '</button>';
+        }).join('');
+
+        var labDiv = document.createElement('div');
+        labDiv.className = 'bgs-dd-wrap';
+        labDiv.innerHTML =
+          '<button class="bgs-dd-btn">Lab Grown Diamonds <span class="bgs-caret">&#9660;</span></button>' +
+          '<div class="bgs-dropdown">' + labItems + '</div>';
+
+        // ── 22K Gold dropdown ──
+        var goldItems = GOLD_ITEMS.map(function (item) {
+          return '<button class="bgs-dropdown-item" onclick="bgsFilterGold(\'' + item.cat + '\')">' + item.label + '</button>';
+        }).join('');
+
+        var goldDiv = document.createElement('div');
+        goldDiv.className = 'bgs-dd-wrap';
+        goldDiv.innerHTML =
+          '<button class="bgs-dd-btn">22K Gold <span class="bgs-caret">&#9660;</span></button>' +
+          '<div class="bgs-dropdown">' + goldItems + '</div>';
+
+        navWrap.appendChild(labDiv);
+        navWrap.appendChild(goldDiv);
+
+        // Insert after "The Collection" button inside the same nav container
+        collBtn.insertAdjacentElement('afterend', navWrap);
+        return true;
+      }
+
+      // Tap-to-toggle for touch devices (hover doesn't exist there),
+      // plus clamping so the menu never extends past the screen edge.
+      document.addEventListener('click', function (e) {
+        // Close the category dropdown if clicking outside it
+        var catDd = document.getElementById('bgs-cat-dd');
+        if (catDd && catDd.classList.contains('bgs-open')) {
+          if (!catDd.contains(e.target)) catDd.classList.remove('bgs-open');
+        }
+
+        var btn = e.target.closest ? e.target.closest('.bgs-dd-btn') : null;
+        var openWraps = document.querySelectorAll('.bgs-dd-wrap.bgs-open');
+        var w;
+        if (!btn) {
+          for (w = 0; w < openWraps.length; w++) openWraps[w].classList.remove('bgs-open');
+          return;
+        }
+        var wrap = btn.parentElement;
+        var willOpen = !wrap.classList.contains('bgs-open');
+        for (w = 0; w < openWraps.length; w++) openWraps[w].classList.remove('bgs-open');
+        if (!willOpen) return;
+        wrap.classList.add('bgs-open');
+        var dd = wrap.querySelector('.bgs-dropdown');
+        if (!dd) return;
+        dd.style.left = '50%';
+        requestAnimationFrame(function () {
+          var r = dd.getBoundingClientRect();
+          var vw = document.documentElement.clientWidth;
+          var shift = 0;
+          if (r.right > vw - 8) shift = (vw - 8) - r.right;
+          if (r.left + shift < 8) shift = 8 - r.left;
+          if (shift) dd.style.left = 'calc(50% + ' + shift.toFixed(1) + 'px)';
+        });
+      });
+
+      /* ─────────────────────────────────────────
+         ABOUT US MODAL
+         ───────────────────────────────────────── */
+      function buildAboutModal() {
+        if (document.getElementById('bgs-about-overlay')) return;
+        var overlay = document.createElement('div');
+        overlay.id = 'bgs-about-overlay';
+        overlay.innerHTML =
+          '<div id="bgs-about-modal" role="dialog" aria-modal="true" aria-label="About BGS Jewellery">' +
+            '<button id="bgs-about-close" onclick="bgsCloseAbout()" aria-label="Close">&times;</button>' +
+            '<h2>Our Story</h2>' +
+            '<p class="bgs-about-sub">Craftsmanship &middot; Heritage &middot; Gold</p>' +
+            '<div class="bgs-about-divider"></div>' +
+            '<p>Gold is not merely a metal — it is a language. At BGS Jewellery, we have spent generations learning to speak it fluently, shaping it into forms that carry meaning long after the craftsman\'s hands have stilled.</p>' +
+            '<p>Our journey began in the heart of the Dubai gold souk, where the air hums with the ancient rhythm of hammers on metal and the warm glow of 22K gold casts its unmistakable light. It was here that our founders learned the craft not from textbooks, but from masters — artisans whose families had worked gold for centuries, who could gauge a metal\'s purity by touch alone.</p>' +
+            '<p>Every piece in our collection is an act of translation. We take the stories of our clients — their heritage, their milestones, their most private aspirations — and render them in gold. Our artisans work in 22K, the purest gold suitable for everyday wear, chosen for its warmth, its longevity, and its irreplaceable lustre.</p>' +
+            '<p>We pair this ancient material with modern brilliance: lab-grown diamonds, each stone chosen for its fire and clarity, set by hand into designs that bridge tradition and the contemporary. Lab-grown diamonds are not a compromise — they are a revolution, identical in every measurable way to mined stones, yet traceable, ethical, and brilliant beyond question.</p>' +
+            '<p>At BGS Jewellery, we believe luxury should not come at the cost of conscience. This is why every piece we create carries our pledge: zero making charges on 22K gold, meticulous craftsmanship, and a transparency as clear as the diamonds we set.</p>' +
+            '<p class="bgs-about-sig">— The BGS Family, Dubai</p>' +
+          '</div>';
+        overlay.addEventListener('click', function (e) {
+          if (e.target === overlay) bgsCloseAbout();
+        });
+        document.body.appendChild(overlay);
+      }
+
+      window.bgsOpenAbout = function () {
+        buildAboutModal();
+        var overlay = document.getElementById('bgs-about-overlay');
+        if (!overlay) return;
+        void overlay.offsetHeight; // flush styles so the fade-in transition still runs
+        overlay.classList.add('bgs-open');
+      };
+
+      window.bgsCloseAbout = function () {
+        var overlay = document.getElementById('bgs-about-overlay');
+        if (overlay) overlay.classList.remove('bgs-open');
+      };
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          bgsCloseAbout();
+          if (window.bgsCloseHpdModal) window.bgsCloseHpdModal();
+        }
+      });
+
+      function injectAboutUsFooter() {
+        if (document.getElementById('bgs-about-us-li')) return false;
+        // Find footer link list — look for the "Contact" link
+        var allLinks = document.querySelectorAll('#footer a, footer a, [id="footer"] a');
+        var contactLink = null;
+        for (var i = 0; i < allLinks.length; i++) {
+          if (allLinks[i].textContent.trim() === 'Contact') {
+            contactLink = allLinks[i];
+            break;
+          }
+        }
+        if (!contactLink) return false;
+        var ul = contactLink.closest('ul');
+        if (!ul) return false;
+
+        var li = document.createElement('li');
+        li.id = 'bgs-about-us-li';
+        var a = document.createElement('a');
+        a.href = '#';
+        a.textContent = 'About Us';
+        a.style.cssText = 'font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(179,179,179,0.4);text-decoration:none;cursor:pointer;transition:color 0.3s;';
+        a.addEventListener('mouseover', function () { this.style.color = '#d4af37'; });
+        a.addEventListener('mouseout', function () { this.style.color = 'rgba(179,179,179,0.4)'; });
+        a.addEventListener('click', function (e) { e.preventDefault(); bgsOpenAbout(); });
+        li.appendChild(a);
+        ul.appendChild(li);
+        return true;
+      }
+
+      /* ─────────────────────────────────────────
+         ADMIN PANEL — ALL KARAT INPUTS
+         ───────────────────────────────────────── */
+      function injectAdminGoldPanel() {
+        if (document.getElementById('bgs-admin-gold-panel')) return true;
+
+        // Find the existing React 22K rate label
+        var labels = document.querySelectorAll('label');
+        var target22K = null;
+        for (var i = 0; i < labels.length; i++) {
+          var txt = labels[i].textContent;
+          if (txt.includes('22K') && (txt.includes('AED') || txt.includes('per gram') || txt.includes('Rate'))) {
+            target22K = labels[i];
+            break;
+          }
+        }
+        if (!target22K) return false;
+
+        // Walk up until we reach the element that contains the "22K Gold Rate" heading
+        var section = target22K.parentElement;
+        var found = false;
+        for (var j = 0; j < 10; j++) {
+          if (!section || section.id === 'root' || section.tagName === 'MAIN') break;
+          var headings = section.querySelectorAll('h1,h2,h3,h4');
+          for (var hi = 0; hi < headings.length; hi++) {
+            if (headings[hi].textContent.includes('22K Gold Rate')) { found = true; break; }
+          }
+          if (found) break;
+          section = section.parentElement;
+        }
+        if (!found || !section) return false;
+        if (section.dataset.bgsAdminDone) return true;
+        section.dataset.bgsAdminDone = '1';
+
+        // Hide the original React 22K section entirely
+        section.style.cssText += ';display:none!important;';
+
+        // Build unified panel for all 5 karats
+        var panel = document.createElement('div');
+        panel.id = 'bgs-admin-gold-panel';
+
+        var titleEl = document.createElement('p');
+        titleEl.className = 'bgs-ag-title';
+        titleEl.textContent = 'Gold Rate Overrides — AED/g';
+        panel.appendChild(titleEl);
+
+        var subtitleEl = document.createElement('p');
+        subtitleEl.style.cssText = 'font-size:0.6rem;color:rgba(255,255,255,0.28);margin:0 0 1rem;letter-spacing:0.04em;line-height:1.5;';
+        subtitleEl.textContent = 'Leave blank to use live prices from dubaicityofgold.com. Save to override manually.';
+        panel.appendChild(subtitleEl);
+
+        var ALL_KARATS = ['24K', '22K', '21K', '18K', '14K'];
+        ALL_KARATS.forEach(function (k) {
+          var stored = localStorage.getItem(GOLD_KEYS[k]) || '';
+          var live = liveRates[k] ? liveRates[k].toFixed(2) : '';
+          var placeholder = live ? 'Live: ' + live : 'Auto';
+          var row = document.createElement('div');
+          row.className = 'bgs-ag-row';
+          row.innerHTML =
+            '<label class="bgs-ag-label">' + k + '</label>' +
+            '<input id="bgs-ag-input-' + k + '" class="bgs-ag-input" type="number" step="0.01" min="0"' +
+              ' placeholder="' + placeholder + '" value="' + stored + '" />' +
+            '<button class="bgs-ag-save" onclick="bgsAdminSaveRate(\'' + k + '\')">Save</button>' +
+            '<button class="bgs-ag-clear" onclick="bgsAdminClearRate(\'' + k + '\')">Clear</button>' +
+            '<span id="bgs-ag-tick-' + k + '" class="bgs-ag-tick">&#10003;</span>';
+          panel.appendChild(row);
+        });
+
+        section.parentElement.insertBefore(panel, section.nextSibling);
+        return true;
+      }
+
+      window.bgsAdminSaveRate = function (karat) {
+        var input = document.getElementById('bgs-ag-input-' + karat);
+        if (!input) return;
+        var val = parseFloat(input.value);
+        if (isNaN(val) || val <= 0) {
+          alert('Please enter a valid price greater than 0.');
+          return;
+        }
+        localStorage.setItem(GOLD_KEYS[karat], String(val));
+        window.dispatchEvent(new Event('bgs_gold_updated'));
+        var tick = document.getElementById('bgs-ag-tick-' + karat);
+        if (tick) {
+          tick.style.display = 'block';
+          setTimeout(function () { tick.style.display = 'none'; }, 2200);
+        }
+      };
+
+      window.bgsAdminClearRate = function (karat) {
+        localStorage.removeItem(GOLD_KEYS[karat]);
+        var input = document.getElementById('bgs-ag-input-' + karat);
+        if (input) input.value = '';
+        window.dispatchEvent(new Event('bgs_gold_updated'));
+        var tick = document.getElementById('bgs-ag-tick-' + karat);
+        if (tick) {
+          tick.textContent = '—';
+          tick.style.display = 'block';
+          setTimeout(function () {
+            tick.style.display = 'none';
+            tick.textContent = '✓';
+          }, 1600);
+        }
+      };
+
+      /* ─────────────────────────────────────────
+         HERO PRODUCTS — THE COLLECTION
+         ───────────────────────────────────────── */
+      var BGS_SHOWCASE = [
+        {id:'celestial-aria-ring',img:'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=900&h=900&fit=crop&q=85&auto=format',tag:'Signature Ring',name:'Celestial Aria Ring',metal:'18K Yellow Gold',stone:'0.5ct Round Diamond'},
+        {id:'lumina-star-pendant',img:'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=900&h=900&fit=crop&q=85&auto=format',tag:'Pendant',name:'Lumina Star Pendant',metal:'18K Rose Gold',stone:'0.3ct Sapphire'},
+        {id:'aurum-link-bracelet',img:'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=900&h=900&fit=crop&q=85&auto=format',tag:'Bracelet',name:'Aurum Link Bracelet',metal:'18K Yellow Gold',stone:'Diamond Pavé'},
+        {id:'eclipse-drop-earrings',img:'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=900&h=900&fit=crop&q=85&auto=format',tag:'Earrings',name:'Eclipse Drop Earrings',metal:'18K White Gold',stone:'0.4ct Diamonds'},
+        {id:'soleil-chain-necklace',img:'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=900&h=900&fit=crop&q=85&auto=format',tag:'Necklace',name:'Soleil Chain Necklace',metal:'18K Yellow Gold',stone:'Polished Gold'},
+        {id:'reverie-band',img:'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=900&h=900&fit=crop&q=85&auto=format',tag:'Eternity Ring',name:'Reverie Band',metal:'18K Yellow Gold',stone:'Full Diamond Eternity'},
+        {id:'noor-tennis-bracelet',img:'https://images.unsplash.com/photo-1608042314453-ae338d80c427?w=900&h=900&fit=crop&q=85&auto=format',tag:'Tennis Bracelet',name:'Noor Tennis Bracelet',metal:'18K White Gold',stone:'2.1ct Diamonds'},
+        {id:'marquise-aura-ring',img:'https://images.unsplash.com/photo-1586104195538-050b9f74f58e?w=900&h=900&fit=crop&q=85&auto=format',tag:'Marquise Ring',name:'Marquise Aura Ring',metal:'18K Rose Gold',stone:'0.7ct Marquise Diamond'},
+        {id:'luna-hoops',img:'https://images.unsplash.com/photo-1588444837495-c6cfeb53f32d?w=900&h=900&fit=crop&q=85&auto=format',tag:'Hoops',name:'Luna Diamond Hoops',metal:'18K Yellow Gold',stone:'0.25ct Diamonds'},
+        {id:'maison-link-chain',img:'https://images.unsplash.com/photo-1603974372039-adc49044b6bd?w=900&h=900&fit=crop&q=85&auto=format',tag:'Chain',name:'Maison Link Chain',metal:'18K Yellow Gold',stone:'Polished Gold'},
+        {id:'sahara-cuff',img:'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=900&h=900&fit=crop&q=85&auto=format',tag:'Cuff',name:'Sahara Diamond Cuff',metal:'18K Yellow Gold',stone:'0.9ct Diamonds'},
+        {id:'atelier-studs',img:'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=900&h=900&fit=crop&q=85&auto=format',tag:'Studs',name:'Atelier Diamond Studs',metal:'18K White Gold',stone:'1.0ct Diamond Pair'}
+      ];
+
+      function getHeroPool() {
+        var pool = BGS_SHOWCASE.slice();
+        try {
+          var inv = JSON.parse(localStorage.getItem('fg_inventory') || '[]');
+          inv.forEach(function(item) {
+            if (item.img && item.name) {
+              pool.push({
+                id: 'inv-' + item.id,
+                img: item.img,
+                name: item.name,
+                tag: item.category || 'Item',
+                metal: item.karat ? item.karat + 'K Gold' : '',
+                stone: item.desc || ''
+              });
+            }
+          });
+        } catch(e) {}
+        return pool;
+      }
+
+      function getHeroSelection() {
+        try { return JSON.parse(localStorage.getItem('fg_hero_products') || '[]'); }
+        catch(e) { return []; }
+      }
+
+      function saveHeroSelection(arr) {
+        if (arr.length === 0) {
+          localStorage.removeItem('fg_hero_products');
+        } else {
+          localStorage.setItem('fg_hero_products', JSON.stringify(arr));
+        }
+        window.dispatchEvent(new Event('bgs_hero_updated'));
+      }
+
+      function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      function renderHeroPanel() {
+        var panel = document.getElementById('bgs-hero-panel');
+        if (!panel) return;
+        var selected = getHeroSelection();
+        var selIds = selected.map(function(p){ return p.id; });
+        var pool = getHeroPool();
+        var available = pool.filter(function(p){ return selIds.indexOf(p.id) === -1; });
+
+        var selHtml = selected.length === 0
+          ? '<p style="color:#444;font-size:0.7rem;padding:0.6rem 0 1rem;">None selected — collection shows defaults.</p>'
+          : selected.map(function(p, i) {
+              var upBtn   = i > 0 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + escHtml(p.id) + '\',-1)">↑</button>' : '<span style="width:24px;display:inline-block"></span>';
+              var downBtn = i < selected.length-1 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + escHtml(p.id) + '\',1)">↓</button>' : '<span style="width:24px;display:inline-block"></span>';
+              return '<div class="bgs-hp-selected-row">' +
+                '<span class="bgs-hp-sel-num">' + (i+1) + '</span>' +
+                '<img class="bgs-hp-sel-img" src="' + escHtml(p.img) + '" alt="">' +
+                '<span class="bgs-hp-sel-name">' + escHtml(p.name) + '</span>' +
+                '<div class="bgs-hp-sel-btns">' + upBtn + downBtn +
+                  '<button class="bgs-hp-remove" onclick="bgsHeroRemove(\'' + escHtml(p.id) + '\')">✕</button>' +
+                '</div>' +
+              '</div>';
+            }).join('');
+
+        var availHtml = available.length === 0
+          ? '<p style="color:#444;font-size:0.7rem;">All products added.</p>'
+          : available.map(function(p) {
+              return '<div class="bgs-hp-card" onclick="bgsHeroAdd(\'' + escHtml(p.id) + '\')">' +
+                '<div class="bgs-hp-card-img-wrap"><img src="' + escHtml(p.img) + '" alt="" loading="lazy"><div class="bgs-hp-card-add">＋</div></div>' +
+                '<div class="bgs-hp-card-info"><p class="bgs-hp-card-name">' + escHtml(p.name) + '</p><p class="bgs-hp-card-tag">' + escHtml(p.tag) + '</p></div>' +
+              '</div>';
+            }).join('');
+
+        panel.innerHTML =
+          '<p class="bgs-hp-title">Hero Products — The Collection</p>' +
+          '<p class="bgs-hp-sub">Choose which pieces appear in The Collection on the homepage. Reorder with ↑↓. Leave empty to show defaults.</p>' +
+          '<p class="bgs-hp-section-label">Currently featured (' + selected.length + ')</p>' +
+          selHtml +
+          (selected.length > 0 ? '<button id="bgs-hp-reset" onclick="bgsHeroClear()">Reset to defaults</button><br><br>' : '') +
+          '<p class="bgs-hp-section-label" style="margin-top:' + (selected.length ? '1.5rem' : '0') + '">Add to collection</p>' +
+          '<div class="bgs-hp-grid">' + availHtml + '</div>';
+      }
+
+      function injectAdminHeroPanel() {
+        if (document.getElementById('bgs-hero-panel')) { renderHeroPanel(); return true; }
+        var goldPanel = document.getElementById('bgs-admin-gold-panel');
+        if (!goldPanel) return false;
+        var panel = document.createElement('div');
+        panel.id = 'bgs-hero-panel';
+        goldPanel.parentElement.insertBefore(panel, goldPanel.nextSibling);
+        renderHeroPanel();
+        return true;
+      }
+
+      window.bgsHeroAdd = function(id) {
+        var pool = getHeroPool();
+        var item = null;
+        for (var i = 0; i < pool.length; i++) { if (pool[i].id === id) { item = pool[i]; break; } }
+        if (!item) return;
+        var sel = getHeroSelection();
+        if (sel.some(function(p){ return p.id === id; })) return;
+        sel.push(item);
+        saveHeroSelection(sel);
+        renderHeroPanel();
+      };
+
+      window.bgsHeroRemove = function(id) {
+        saveHeroSelection(getHeroSelection().filter(function(p){ return p.id !== id; }));
+        renderHeroPanel();
+      };
+
+      window.bgsHeroMove = function(id, dir) {
+        var sel = getHeroSelection();
+        var idx = -1;
+        for (var i = 0; i < sel.length; i++) { if (sel[i].id === id) { idx = i; break; } }
+        if (idx < 0) return;
+        var ni = idx + dir;
+        if (ni < 0 || ni >= sel.length) return;
+        var tmp = sel[idx]; sel[idx] = sel[ni]; sel[ni] = tmp;
+        saveHeroSelection(sel);
+        renderHeroPanel();
+      };
+
+      window.bgsHeroClear = function() {
+        saveHeroSelection([]);
+        renderHeroPanel();
+      };
+
+      function makeHeroCard(p) {
+        var sub = p.metal ? (p.metal + (p.stone ? ' · ' + p.stone : '')) : (p.stone || '');
+        return '<div class="product-card card-enter" style="cursor:pointer" onclick="bgsOpenHeroModal(\'' + escHtml(p.id) + '\')">' +
+          '<div class="relative w-full overflow-hidden" style="padding-top:100%">' +
+            '<img src="' + escHtml(p.img) + '" alt="' + escHtml(p.name) + '" loading="lazy" class="card-img absolute inset-0 w-full h-full object-cover">' +
+            '<div class="card-overlay absolute inset-0 flex flex-col justify-end" style="padding:1.4rem 1.2rem 1.2rem;background:linear-gradient(to top,rgba(10,10,10,0.97) 0%,rgba(10,10,10,0.75) 35%,rgba(10,10,10,0.15) 65%,transparent 100%)">' +
+              '<p class="card-tag text-[0.58rem] tracking-[0.32em] uppercase mb-1" style="color:#d4af37">' + escHtml(p.tag||p.category||'') + '</p>' +
+              '<h3 class="card-name font-playfair font-medium mb-1 leading-snug" style="font-size:1.05rem;color:#fff;letter-spacing:0.03em">' + escHtml(p.name) + '</h3>' +
+              '<p class="card-desc text-[0.72rem] tracking-[0.08em] mb-3" style="color:#b3b3b3">' + escHtml(sub) + '</p>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      var heroPrevSig = null;
+      function applyHeroProducts() {
+        var heroData = localStorage.getItem('fg_hero_products');
+        var collSec = document.getElementById('collection');
+        if (!collSec) return;
+        var grid = collSec.querySelector('.grid.gap-5');
+        if (!grid) return;
+
+        if (!heroData || heroData === '[]') {
+          // Clear any previous override if defaulting back
+          if (heroPrevSig) { heroPrevSig = null; grid.removeAttribute('data-bgs-hero'); }
+          return;
+        }
+
+        if (heroData === heroPrevSig && grid.getAttribute('data-bgs-hero') === '1') return;
+
+        var heroes = [];
+        try { heroes = JSON.parse(heroData); } catch(e) { return; }
+        if (!heroes.length) return;
+
+        grid.innerHTML = heroes.map(makeHeroCard).join('');
+        grid.setAttribute('data-bgs-hero', '1');
+        heroPrevSig = heroData;
+      }
+
+      window.addEventListener('bgs_hero_updated', function() { heroPrevSig = null; applyHeroProducts(); });
+
+      /* ─────────────────────────────────────────
+         IMPORT PREVIEW — IMAGE STATUS REPORT
+         Tells the admin how many parsed rows have a
+         usable image BEFORE they apply the upload.
+         ───────────────────────────────────────── */
+      var _imgReportSig = '';
+      var _imgProbes = {}; // url -> 'pending' | 'ok' | 'fail'
+      function probeImg(url) {
+        if (_imgProbes[url]) return;
+        _imgProbes[url] = 'pending';
+        var im = new Image();
+        im.onload = function () { _imgProbes[url] = 'ok'; };
+        im.onerror = function () { _imgProbes[url] = 'fail'; };
+        im.src = url;
+      }
+
+      function updateImportImageReport() {
+        var applyBtn = null;
+        var btns = document.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {
+          if (/^apply \d+ item/i.test(btns[i].textContent.trim())) { applyBtn = btns[i]; break; }
+        }
+        var existing = document.getElementById('bgs-img-report');
+        if (!applyBtn || !window.bgsLastParsed) {
+          if (existing) { existing.remove(); _imgReportSig = ''; }
+          return;
+        }
+
+        var scope = applyBtn.parentElement, table = null;
+        for (var j = 0; j < 6 && scope; j++) {
+          table = scope.querySelector('table');
+          if (table) break;
+          scope = scope.parentElement;
+        }
+        if (!table) return;
+
+        var items = window.bgsLastParsed;
+        var total = items.length, empty = 0, broken = 0, pending = 0, ok = 0, driveFail = 0;
+        for (var k = 0; k < total; k++) {
+          var url = items[k] && items[k].img;
+          if (!url) { empty++; continue; }
+          var probeUrl = url.indexOf('|||') >= 0 ? url.split('|||')[0].trim() : url;
+          if (!probeUrl) { empty++; continue; }
+          probeImg(probeUrl);
+          if (_imgProbes[probeUrl] === 'ok') ok++;
+          else if (_imgProbes[probeUrl] === 'fail') {
+            broken++;
+            if (/drive\.google\.com/i.test(probeUrl)) driveFail++;
+          }
+          else pending++;
+        }
+        if (!total) return;
+
+        var html;
+        if (ok === total) {
+          html = '<span style="color:#4ade80">&#10003; All ' + total + ' row image' + (total !== 1 ? 's' : '') + ' loaded successfully.</span>';
+        } else {
+          var parts = [];
+          if (ok) parts.push(ok + ' loaded');
+          if (empty) parts.push(empty + ' empty image cell' + (empty !== 1 ? 's' : ''));
+          if (broken) parts.push(broken + ' link' + (broken !== 1 ? 's' : '') + ' failed to load');
+          if (pending) parts.push(pending + ' still loading&hellip;');
+          html =
+            '<span style="color:' + (empty + broken > 0 ? '#fbbf24' : '#4ade80') + '">' +
+              (empty + broken > 0 ? '&#9888; ' : '') + 'Images: ' + parts.join(' &middot; ') + ' (of ' + total + ' rows)' +
+            '</span>' +
+            (window.bgsXlsPictureWarning && empty > 0
+              ? '<br><span style="color:#fbbf24">This sheet is in the old .xls format &mdash; pictures inside it cannot be read. ' +
+                'In Excel choose File &rarr; Save As &rarr; &ldquo;Excel Workbook (.xlsx)&rdquo; and upload that file instead.</span>'
+              : '') +
+            (driveFail > 0
+              ? '<br><span style="color:#fbbf24">' + driveFail + ' Google Drive link' + (driveFail !== 1 ? 's' : '') +
+                ' failed — in Drive, right-click the image file &rarr; Share &rarr; set &ldquo;Anyone with the link&rdquo;, then re-upload this sheet.</span>'
+              : '') +
+            (empty + broken > 0
+              ? '<br><span style="color:#666">Image cells must contain a public image link as text (https://&hellip;), ' +
+                'or paste the picture directly onto the row in Excel (.xlsx) &mdash; both are supported. ' +
+                'Placeholder links like example.com cannot be displayed.</span>'
+              : '');
+        }
+
+        var sig = total + '|' + empty + '|' + broken + '|' + pending + '|' + ok + '|' + driveFail + '|' + (window.bgsXlsPictureWarning ? 1 : 0);
+        if (existing && sig === _imgReportSig) return;
+        _imgReportSig = sig;
+
+        if (!existing) {
+          existing = document.createElement('div');
+          existing.id = 'bgs-img-report';
+          existing.style.cssText = 'margin:0.75rem 0;padding:0.7rem 0.9rem;border:1px solid rgba(212,175,55,0.15);' +
+            'background:rgba(212,175,55,0.03);font-size:0.72rem;line-height:1.6;' +
+            "font-family:'Inter','Helvetica Neue',sans-serif;";
+          table.parentElement.insertBefore(existing, table);
+        }
+        existing.innerHTML = html;
+      }
+
+      /* ─────────────────────────────────────────
+         HIDE ORIGINAL REACT GOLD BOX (polling)
+         ───────────────────────────────────────── */
+      var reactBoxHidden = false;
+      function tryHideReactBox() {
+        if (reactBoxHidden) return;
+        if (hideReactGoldBox()) reactBoxHidden = true;
+      }
+
+      /* ─────────────────────────────────────────
+         HIDE REACT 22K ADMIN SECTION (polling)
+         ───────────────────────────────────────── */
+      function tryHideReact22KAdmin() {
+        var headings = document.querySelectorAll('h2,h3,h4');
+        for (var i = 0; i < headings.length; i++) {
+          var h = headings[i];
+          if (h.textContent.trim() === '22K Gold Rate (AED/g)') {
+            var container = h.parentElement;
+            if (container && window.getComputedStyle(container).display !== 'none') {
+              container.style.setProperty('display', 'none', 'important');
+            }
+            return;
+          }
+        }
+      }
+
+      /* ─────────────────────────────────────────
+         MAIN INIT LOOP
+         ───────────────────────────────────────── */
+      var navInjected = false;
+      var footerInjected = false;
+      var adminInjected = false;
+      var heroAdminInjected = false;
+      var marqueeAdminInjected = false;
+      var goldBuilt = false;
+      // filterInjected is declared in the category filter section above
+
+      var _taglinePatched = false;
+      function patchReactText() {
+        if (_taglinePatched) return;
+        var ps = document.querySelectorAll('p');
+        for (var i = 0; i < ps.length; i++) {
+          if (ps[i].textContent.indexOf('Beneath this') >= 0) {
+            ps[i].textContent = 'Hidden luxury';
+            _taglinePatched = true;
+            return;
+          }
+        }
+      }
+
+      /* ─────────────────────────────────────────
+         SCROLLING RIBBON — pause-on-hover + editable text (synced)
+         ───────────────────────────────────────── */
+      var DEFAULT_MARQUEE = ['22K Gold', 'Lab Grown Diamonds', 'Handcrafted', 'BGS Jewellery', 'Bespoke Jewellery', 'Hidden Luxury'];
+
+      function getMarqueeItems(customOnly) {
+        try {
+          var raw = localStorage.getItem('fg_marquee_items');
+          if (raw) { var a = JSON.parse(raw); if (Array.isArray(a) && a.length) return a; }
+        } catch (e) {}
+        return customOnly ? null : DEFAULT_MARQUEE.slice();
+      }
+
+      // Pause the ribbon while a pointer hovers or presses it (works on desktop + touch)
+      function bgsBindMarqueePause(track) {
+        if (!track || track.dataset.bgsMqBound) return;
+        track.dataset.bgsMqBound = '1';
+        var pause = function () { track.classList.add('bgs-mq-paused'); };
+        var run   = function () { track.classList.remove('bgs-mq-paused'); };
+        track.addEventListener('mouseenter', pause);
+        track.addEventListener('mouseleave', run);
+        track.addEventListener('touchstart', pause, { passive: true });
+        track.addEventListener('touchend', run);
+        track.addEventListener('touchcancel', run);
+      }
+
+      // Replace the ribbon words with the admin's custom list (only if customized).
+      // Clones the existing spans so the fonts/spacing/animation stay identical.
+      function bgsApplyMarquee() {
+        var items = getMarqueeItems(true); // custom only — null = leave React default
+        if (!items) return;
+        var track = document.querySelector('.marquee-track');
+        if (!track || !track.children.length) return;
+        var sig = items.join('|||');
+        if (track.dataset.bgsMqSig === sig) return;
+        var wordTpl = null, sepTpl = null, kids = track.children, i, t;
+        for (i = 0; i < kids.length; i++) {
+          t = (kids[i].textContent || '').trim();
+          if (t === '·' && !sepTpl) sepTpl = kids[i];
+          else if (t && t !== '·' && !wordTpl) wordTpl = kids[i];
+          if (wordTpl && sepTpl) break;
+        }
+        if (!wordTpl || !sepTpl) return;
+        var frag = document.createDocumentFragment();
+        function addSet() {
+          items.forEach(function (w) {
+            var ws = wordTpl.cloneNode(true); ws.textContent = w; frag.appendChild(ws);
+            frag.appendChild(sepTpl.cloneNode(true));
+          });
+        }
+        addSet(); addSet(); // duplicated so the seamless -50% loop still lines up
+        track.innerHTML = '';
+        track.appendChild(frag);
+        track.dataset.bgsMqSig = sig;
+        bgsBindMarqueePause(track);
+      }
+
+      // Admin editor — injected into the settings page next to the other panels
+      function injectMarqueePanel() {
+        if (document.getElementById('bgs-marquee-panel')) return true;
+        var anchor = document.getElementById('bgs-hero-panel') || document.getElementById('bgs-admin-gold-panel');
+        if (!anchor || !anchor.parentElement) return false;
+        var panel = document.createElement('div');
+        panel.id = 'bgs-marquee-panel';
+        panel.innerHTML =
+          '<p class="bgs-mq-title">Scrolling Ribbon</p>' +
+          '<p class="bgs-mq-sub">One phrase per line. These scroll across the ribbon under the hero. The ribbon pauses when a visitor hovers or presses it.</p>' +
+          '<textarea id="bgs-mq-text" class="bgs-mq-textarea" rows="6" spellcheck="false"></textarea>' +
+          '<div class="bgs-mq-row">' +
+            '<button class="bgs-mq-save" onclick="bgsMarqueeSave()">Save Ribbon</button>' +
+            '<button class="bgs-mq-reset" onclick="bgsMarqueeReset()">Reset to default</button>' +
+          '</div>' +
+          '<span id="bgs-mq-tick" class="bgs-mq-tick">&#10003; Saved &amp; synced</span>';
+        anchor.parentElement.insertBefore(panel, anchor.nextSibling);
+        var ta = document.getElementById('bgs-mq-text');
+        if (ta) ta.value = getMarqueeItems(false).join('\n');
+        return true;
+      }
+
+      function bgsMarqueeFlash(msg) {
+        var tk = document.getElementById('bgs-mq-tick');
+        if (!tk) return;
+        tk.textContent = msg;
+        tk.style.display = 'block';
+        setTimeout(function () { tk.style.display = 'none'; }, 2200);
+      }
+
+      window.bgsMarqueeSave = function () {
+        var ta = document.getElementById('bgs-mq-text');
+        if (!ta) return;
+        var items = ta.value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+        if (!items.length) { alert('Add at least one phrase (one per line).'); return; }
+        localStorage.setItem('fg_marquee_items', JSON.stringify(items)); // fg_ prefix → syncs to all devices
+        var tr = document.querySelector('.marquee-track'); if (tr) delete tr.dataset.bgsMqSig;
+        bgsApplyMarquee();
+        bgsMarqueeFlash('✓ Saved & synced');
+      };
+
+      window.bgsMarqueeReset = function () {
+        // Store the defaults (rather than removing) so the reset also syncs across devices
+        localStorage.setItem('fg_marquee_items', JSON.stringify(DEFAULT_MARQUEE));
+        var ta = document.getElementById('bgs-mq-text'); if (ta) ta.value = DEFAULT_MARQUEE.join('\n');
+        var tr = document.querySelector('.marquee-track'); if (tr) delete tr.dataset.bgsMqSig;
+        bgsApplyMarquee();
+        bgsMarqueeFlash('✓ Reset to default');
+      };
+
+      // Re-apply quickly when another device pushes a ribbon change
+      window.addEventListener('fg_inventory_updated', bgsApplyMarquee);
+
+      function tick() {
+        // Gold ticker — build once React has loaded
+        if (!goldBuilt && document.getElementById('root') && document.getElementById('root').children.length > 0) {
+          initGold();
+          goldBuilt = true;
+        }
+
+        // Patch React-rendered text strings
+        patchReactText();
+
+        // Always try to hide the React gold box
+        tryHideReactBox();
+
+        // Always hide the React 22K admin section (our unified panel replaces it)
+        tryHideReact22KAdmin();
+
+        // Image status report on the upload preview
+        updateImportImageReport();
+
+        // Custom category filter bar (replaces React's filter buttons on inventory page)
+        if (!filterInjected) {
+          filterInjected = !!injectCategoryFilter();
+        }
+        if (filterInjected && !document.getElementById('bgs-cat-filter')) {
+          filterInjected = false;
+        }
+        // Keep React's filter buttons hidden while our UI is active
+        if (filterInjected && _bgsFilterContainer && document.contains(_bgsFilterContainer)) {
+          _bgsFilterContainer.style.setProperty('display', 'none', 'important');
+        }
+
+        // Nav dropdowns
+        if (!navInjected) {
+          navInjected = !!buildNavDropdowns();
+        }
+
+        // Re-check nav injection if React re-rendered and removed our elements
+        if (navInjected && !document.getElementById('bgs-collection-nav')) {
+          navInjected = false;
+        }
+
+        // Footer About Us
+        if (!footerInjected) {
+          footerInjected = injectAboutUsFooter();
+        }
+        if (footerInjected && !document.getElementById('bgs-about-us-li')) {
+          footerInjected = false;
+        }
+
+        // Admin panel extension
+        if (!adminInjected) {
+          adminInjected = injectAdminGoldPanel();
+        }
+        if (adminInjected && !document.getElementById('bgs-admin-gold-panel')) {
+          adminInjected = false;
+        }
+
+        // Hero products admin panel
+        if (!heroAdminInjected) {
+          heroAdminInjected = injectAdminHeroPanel();
+        }
+        if (heroAdminInjected && !document.getElementById('bgs-hero-panel')) {
+          heroAdminInjected = false;
+        }
+
+        // Apply hero products on homepage collection
+        applyHeroProducts();
+
+        // Scrolling ribbon: bind pause-on-hover/press, apply custom text if set
+        var _mqTrack = document.querySelector('.marquee-track');
+        if (_mqTrack) bgsBindMarqueePause(_mqTrack);
+        bgsApplyMarquee();
+
+        // Ribbon admin editor (settings page)
+        if (!marqueeAdminInjected) {
+          marqueeAdminInjected = injectMarqueePanel();
+        }
+        if (marqueeAdminInjected && !document.getElementById('bgs-marquee-panel')) {
+          marqueeAdminInjected = false;
+        }
+      }
+
+      /* ─────────────────────────────────────────
+         GOLD PRICE BUTTON ANIMATION FAILSAFE
+         Forces the animation via inline style if the CSS declaration was
+         lost (stale browser cache after a new deployment).
+         ───────────────────────────────────────── */
+      (function bgsEnsureGoldAnim() {
+        function applyAnim() {
+          var btn = document.getElementById('bgs-ticker-toggle');
+          if (!btn) return;
+          if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+          var current = window.getComputedStyle(btn).animationName;
+          if (!current || current === 'none') {
+            btn.style.animation = 'bgs-gold-pulse 2.4s ease-in-out infinite';
+          }
+        }
+        document.addEventListener('DOMContentLoaded', function () { setTimeout(applyAnim, 800); });
+        setTimeout(applyAnim, 2500);
+      })();
+
+      // Run every 600ms — fast enough to catch React re-renders, light enough for production
+      setInterval(tick, 600);
+      // Also run immediately after DOM loads
+      document.addEventListener('DOMContentLoaded', tick);
+      // And after hash changes (page navigation)
+      window.addEventListener('hashchange', function () {
+        navInjected = false;
+        filterInjected = false;
+        footerInjected = false;
+        adminInjected = false;
+        heroAdminInjected = false;
+        marqueeAdminInjected = false;
+        reactBoxHidden = false;
+        heroPrevSig = null;
+        // Force admin password prompt every time settings page is opened
+        try { sessionStorage.removeItem('fg_admin'); } catch(e) {}
+        setTimeout(tick, 200);
+        setTimeout(tick, 600);
+        setTimeout(tick, 1200);
+      });
+
+    })();
+    </script>
+    <!-- PERF: async-decode + lazy-load images (hero is a CSS background, unaffected) -->
+    <script id="bgs-img-perf">
+    (function () {
+      function hint(img) {
+        if (!img.getAttribute('decoding')) img.setAttribute('decoding', 'async');
+        if (!img.getAttribute('loading'))  img.setAttribute('loading', 'lazy');
+      }
+      function scan(root) {
+        if (!root || !root.querySelectorAll) return;
+        if (root.tagName === 'IMG') hint(root);
+        root.querySelectorAll('img').forEach(hint);
+      }
+      scan(document);
+      new MutationObserver(function (muts) {
+        for (var i = 0; i < muts.length; i++) {
+          var added = muts[i].addedNodes;
+          for (var j = 0; j < added.length; j++) {
+            if (added[j].nodeType === 1) scan(added[j]);
+          }
+        }
+      }).observe(document.documentElement, { childList: true, subtree: true });
+    })();
+    </script>
+  </body>
+</html>

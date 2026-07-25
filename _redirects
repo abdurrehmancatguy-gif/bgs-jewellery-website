@@ -1,0 +1,4 @@
+/api/gold-prices  /.netlify/functions/gold-prices  200
+/api/drive-img    /.netlify/functions/drive-img    200
+/api/inventory    /.netlify/functions/inventory    200
+/*                /index.html                      200

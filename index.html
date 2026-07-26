@@ -64,197 +64,6 @@
          ═══════════════════════════════════════════ -->
     <style id="bgs-feature-styles">
 
-      /* ── GOLD PRICE TICKER ── */
-      #bgs-gold-ticker {
-        position: fixed;
-        top: 6rem; /* below the fixed 82px nav bar so it never overlaps the menu */
-        right: 1.5rem;
-        z-index: 8900;
-        background: linear-gradient(135deg, #080808 0%, #110e06 50%, #080808 100%);
-        border: 1px solid rgba(212,175,55,0.28);
-        border-radius: 3px;
-        padding: 1rem 1.2rem 0.85rem;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,0,0,0.5);
-        transform: translateX(calc(100% + 1.6rem));
-        transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
-        min-width: 210px;
-        max-width: 260px;
-        overflow: visible;
-      }
-      #bgs-gold-ticker.bgt-open {
-        transform: translateX(0);
-      }
-
-      /* ── TICKER TOGGLE TAB ── */
-      #bgs-ticker-toggle {
-        position: absolute;
-        top: 0;
-        left: -30px;
-        width: 30px;
-        height: 122px;
-        background: linear-gradient(135deg, #080808 0%, #110e06 50%, #080808 100%);
-        border: 1px solid rgba(212,175,55,0.28);
-        border-right: none;
-        border-radius: 3px 0 0 3px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        box-shadow: -5px 0 14px rgba(0,0,0,0.55);
-        transition: background 0.2s;
-      }
-      @keyframes bgs-gold-pulse {
-        0%   { box-shadow: -5px 0 16px rgba(0,0,0,0.55), 0 0 10px rgba(212,175,55,0.15), -2px 0 14px rgba(212,175,55,0.12); transform: scaleY(1); }
-        50%  { box-shadow: -5px 0 20px rgba(0,0,0,0.38), 0 0 32px rgba(212,175,55,0.68), -4px 0 38px rgba(212,175,55,0.48), 0 0 6px rgba(255,220,80,0.9); transform: scaleY(1.028); }
-        100% { box-shadow: -5px 0 16px rgba(0,0,0,0.55), 0 0 10px rgba(212,175,55,0.15), -2px 0 14px rgba(212,175,55,0.12); transform: scaleY(1); }
-      }
-
-      #bgs-ticker-toggle {
-        animation: bgs-gold-pulse 2.4s ease-in-out infinite;
-        will-change: transform, box-shadow;
-      }
-      #bgs-ticker-toggle:hover {
-        animation: none;
-        background: linear-gradient(135deg, #101010 0%, #1a1300 50%, #101010 100%);
-        box-shadow: -5px 0 22px rgba(0,0,0,0.5), 0 0 24px rgba(212,175,55,0.35), -4px 0 28px rgba(212,175,55,0.2);
-        transform: scaleY(1.01);
-        transition: box-shadow 0.35s ease, transform 0.35s ease, background 0.2s;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        #bgs-ticker-toggle { animation: none; }
-      }
-
-      .bgt-tab-label {
-        writing-mode: vertical-rl;
-        font-size: 0.55rem;
-        letter-spacing: 0.3em;
-        text-transform: uppercase;
-        color: rgba(212,175,55,0.8);
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-        line-height: 1;
-        white-space: nowrap;
-        user-select: none;
-        pointer-events: none;
-        transition: color 0.2s;
-      }
-      #bgs-ticker-toggle:hover .bgt-tab-label { color: #d4af37; }
-
-      #bgs-gold-ticker .bgt-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.7rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid rgba(212,175,55,0.12);
-      }
-
-      #bgs-gold-ticker .bgt-title {
-        font-size: 0.52rem;
-        letter-spacing: 0.32em;
-        text-transform: uppercase;
-        color: #9f8a48;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-      }
-
-      /* Square, centred box — asymmetric padding would put the pivot off the
-         icon's centre and make it orbit instead of spin in place. */
-      #bgs-gold-ticker .bgt-refresh {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: #444;
-        padding: 0;
-        margin-left: 0.5rem;
-        line-height: 0;
-        transition: color 0.2s;
-        font-family: inherit;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 15px;
-        height: 15px;
-        flex: none;
-      }
-      #bgs-gold-ticker .bgt-refresh:hover { color: #d4af37; }
-
-      /* An SVG rather than the ↻ glyph: a text glyph sits on a baseline, so
-         its visual centre is not the centre of its box and it wobbles. */
-      #bgs-gold-ticker .bgt-refresh svg {
-        width: 15px;
-        height: 15px;
-        display: block;
-        transform-origin: 50% 50%;
-      }
-      #bgs-gold-ticker .bgt-refresh.spinning svg {
-        animation: bgtSpin 0.9s linear infinite;
-      }
-      @keyframes bgtSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-      @media (prefers-reduced-motion: reduce) {
-        #bgs-gold-ticker .bgt-refresh.spinning svg { animation-duration: 2.4s; }
-      }
-
-      #bgs-gold-ticker .bgt-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.28rem 0;
-        border-bottom: 1px solid rgba(255,255,255,0.03);
-      }
-      #bgs-gold-ticker .bgt-row:last-child { border-bottom: none; }
-
-      #bgs-gold-ticker .bgt-karat {
-        font-size: 0.78rem;
-        font-weight: 500;
-        letter-spacing: 0.12em;
-        color: rgba(255,255,255,0.45);
-        text-transform: uppercase;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-        min-width: 36px;
-      }
-
-      #bgs-gold-ticker .bgt-price {
-        font-size: 0.78rem;
-        font-weight: 500;
-        color: rgba(212,175,55,0.85);
-        letter-spacing: 0.03em;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-      }
-
-      #bgs-gold-ticker .bgt-unit {
-        font-size: 0.62rem;
-        font-weight: 400;
-        color: #555;
-        margin-left: 0.22rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-      }
-
-      #bgs-gold-ticker .bgt-admin-star {
-        font-size: 0.5rem;
-        color: #9f8a48;
-        margin-left: 0.15rem;
-      }
-
-      #bgs-gold-ticker .bgt-footer {
-        margin-top: 0.6rem;
-        padding-top: 0.45rem;
-        border-top: 1px solid rgba(255,255,255,0.04);
-      }
-
-      #bgs-gold-ticker .bgt-source {
-        font-size: 0.5rem;
-        color: #383838;
-        text-decoration: none;
-        letter-spacing: 0.07em;
-        transition: color 0.2s;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-        display: block;
-      }
-      #bgs-gold-ticker .bgt-source:hover { color: #9f8a48; }
-
       /* Hide the original React 22K-only price box */
       #bgs-hide-react-gold { display: none !important; }
 
@@ -827,40 +636,6 @@
           border-radius: 20px;
         }
 
-        #bgs-gold-ticker {
-          bottom: 0;
-          top: auto;
-          right: 0;
-          left: 0;
-          max-width: 100%;
-          border-radius: 0;
-          border-left: none;
-          border-right: none;
-          transform: translateY(100%);
-          transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
-        }
-        #bgs-gold-ticker.bgt-open {
-          transform: translateY(0);
-        }
-        /* toggle becomes a tab on the sheet's top edge — always reachable */
-        #bgs-ticker-toggle {
-          display: flex;
-          top: -30px;
-          right: 14px;
-          left: auto;
-          width: auto;
-          min-width: 96px;
-          height: 30px;
-          padding: 0 0.9rem;
-          border: 1px solid rgba(212,175,55,0.28);
-          border-bottom: none;
-          border-radius: 4px 4px 0 0;
-          box-shadow: 0 -6px 14px rgba(0,0,0,0.45);
-        }
-        #bgs-ticker-toggle .bgt-tab-label {
-          writing-mode: horizontal-tb;
-          font-size: 0.58rem;
-        }
         .bgs-dd-btn { font-size: 0.72rem; padding: 0.35rem 0.5rem; }
         #bgs-about-modal { padding: 2rem 1.5rem 1.75rem; }
         #bgs-about-modal h2 { font-size: 1.5rem; }
@@ -1215,9 +990,19 @@
         #bgs-hpd-body { padding: 1.5rem 1.25rem 3rem; overflow-y: visible; }
       }
 
+      /* ── HERO COPY REMOVED ──
+         Both descriptive paragraphs are dropped. Targeted by their Tailwind
+         position classes rather than the JS-added lift classes so they never
+         flash in before the script runs. The right-hand block keeps its
+         Browse More / Collection buttons — only its <p> goes. */
+      section.relative.w-full.overflow-hidden.bg-black
+        > div[class*="bottom-14"][class*="left-10"] { display: none !important; }
+      section.relative.w-full.overflow-hidden.bg-black
+        > div[class*="sm:bottom-24"] > p { display: none !important; }
+
       /* ── HERO HORIZONTAL GOLD RATE BAR ──
-         Sits across the bottom of the hero, beneath the side copy.
-         Shares its data with #bgs-gold-ticker, so both stay in sync. */
+         Sits across the bottom of the hero. The only gold-rate display on
+         the site since the slide-out ticker panel was removed. */
       #bgs-hero-rates {
         position: absolute;
         bottom: 2rem;
@@ -2338,74 +2123,11 @@
       }
 
       /* ─────────────────────────────────────────
-         GOLD PRICE TICKER WIDGET
-         ───────────────────────────────────────── */
-      function buildTicker() {
-        if (document.getElementById('bgs-gold-ticker')) return;
-        var el = document.createElement('div');
-        el.id = 'bgs-gold-ticker';
-        el.innerHTML =
-          '<button id="bgs-ticker-toggle" onclick="window.bgsToggleTicker()" title="Show / hide gold rates">' +
-            '<span class="bgt-tab-label">Gold Price</span>' +
-          '</button>' +
-          '<div class="bgt-header">' +
-            '<span class="bgt-title">Gold Rates &middot; AED/g</span>' +
-            '<button class="bgt-refresh" title="Refresh gold prices" onclick="window.bgsRefreshGold()" aria-label="Refresh gold prices">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
-                   'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-                '<path d="M20.5 12a8.5 8.5 0 1 1-2.49-6.01"/>' +
-                '<polyline points="20.5 3.5 20.5 9 15 9"/>' +
-              '</svg>' +
-            '</button>' +
-          '</div>' +
-          '<div id="bgt-rows"></div>' +
-          '<div class="bgt-footer">' +
-            '<a class="bgt-source" href="https://dubaicityofgold.com/" target="_blank" rel="noopener">Live &middot; dubaicityofgold.com &#8599;</a>' +
-          '</div>';
-        document.body.appendChild(el);
-        // Closed by default — only reopens if the visitor left it open last time
-        if (localStorage.getItem('bgt_open') === '1') {
-          setTimeout(function() { el.classList.add('bgt-open'); }, 480);
-        }
-      }
-
-      window.bgsToggleTicker = function() {
-        var t = document.getElementById('bgs-gold-ticker');
-        if (!t) return;
-        var opening = !t.classList.contains('bgt-open');
-        t.classList.toggle('bgt-open');
-        try { localStorage.setItem('bgt_open', opening ? '1' : '0'); } catch(e) {}
-      };
-
-      function renderTickerRows(rates) {
-        var container = document.getElementById('bgt-rows');
-        if (!container) return;
-        var html = '';
-        for (var i = 0; i < KARATS.length; i++) {
-          var k = KARATS[i];
-          var price = rates[k];
-          var isAdmin = getAdminRate(k) !== null;
-          var is22 = k === '22K';
-          html +=
-            '<div class="bgt-row' + (is22 ? ' bgt-22k' : '') + '">' +
-              '<span class="bgt-karat">' + k + '</span>' +
-              '<span>' +
-                '<span class="bgt-price">' + price.toFixed(2) + '</span>' +
-                '<span class="bgt-unit">AED</span>' +
-                (isAdmin ? '<span class="bgt-admin-star" title="Admin override">&#9733;</span>' : '') +
-              '</span>' +
-            '</div>';
-        }
-        container.innerHTML = html;
-        // The hero bar shows the same numbers — keep the two in lockstep
-        renderHeroRateBar(rates);
-      }
-
-      /* ─────────────────────────────────────────
          HERO HORIZONTAL GOLD RATE BAR
-         A second view of the same rates, laid out across the bottom of
-         the hero (karat above, price beneath). Fed by renderTickerRows,
-         so admin overrides and live fetches reach it automatically.
+         The site's only gold-rate display: karat above, price beneath,
+         laid out across the bottom of the hero. Every rate update —
+         admin override, live fetch, 5-minute refresh — renders through
+         renderHeroRateBar, so there is a single source of truth.
          ───────────────────────────────────────── */
       var _bgsLastRates = null;
 
@@ -2459,42 +2181,11 @@
         cells.innerHTML = html;
       }
 
-      /* Stop on an iteration boundary so the icon lands back at 0deg.
-         Dropping the class mid-turn would snap it to whatever angle it
-         happened to be at. */
-      function bgsSpinStop(btn) {
-        if (!btn || !btn.classList.contains('spinning')) return;
-        var svg = btn.querySelector('svg');
-        var stop = function () {
-          if (svg) svg.removeEventListener('animationiteration', stop);
-          btn.classList.remove('spinning');
-        };
-        if (!svg) return stop();
-        svg.addEventListener('animationiteration', stop);
-        // Failsafe: animations don't tick in a hidden tab, so never hang spinning
-        setTimeout(function () {
-          if (btn.classList.contains('spinning')) stop();
-        }, 3000);
-      }
-
-      window.bgsRefreshGold = async function () {
-        var btn = document.querySelector('#bgs-gold-ticker .bgt-refresh');
-        if (btn) btn.classList.add('spinning');
-        var price = await fetchLivePrice();
-        var admin22 = getAdminRate('22K');
-        currentBase22K = admin22 !== null ? admin22 : price;
-        renderTickerRows(computeAllRates(currentBase22K));
-        bgsSpinStop(btn);
-        // Also refresh the React built-in box
-        var reactRefresh = document.querySelector('[title="Refresh price"]');
-        if (reactRefresh) reactRefresh.click();
-      };
-
       // Listen for admin gold updates
       window.addEventListener('bgs_gold_updated', function () {
         var admin22 = getAdminRate('22K');
         if (admin22 !== null) currentBase22K = admin22;
-        renderTickerRows(computeAllRates(currentBase22K));
+        renderHeroRateBar(computeAllRates(currentBase22K));
         // Trigger React component refresh for the 22K rate
         var reactRefresh = document.querySelector('[title="Refresh price"]');
         if (reactRefresh) reactRefresh.click();
@@ -2524,13 +2215,12 @@
         } else if (cached) {
           currentBase22K = cached;
         }
-        buildTicker();
-        renderTickerRows(computeAllRates(currentBase22K));
+        renderHeroRateBar(computeAllRates(currentBase22K));
         // Fetch fresh in background
         fetchLivePrice().then(function (p) {
           var a22 = getAdminRate('22K');
           if (a22 === null) currentBase22K = p;
-          renderTickerRows(computeAllRates(currentBase22K));
+          renderHeroRateBar(computeAllRates(currentBase22K));
           updateAdminPlaceholders();
         });
       }
@@ -2541,7 +2231,7 @@
           var a22 = getAdminRate('22K');
           if (a22 === null) {
             currentBase22K = p;
-            renderTickerRows(computeAllRates(currentBase22K));
+            renderHeroRateBar(computeAllRates(currentBase22K));
           }
         });
       }, 5 * 60 * 1000);
@@ -3702,25 +3392,6 @@
           marqueeAdminInjected = false;
         }
       }
-
-      /* ─────────────────────────────────────────
-         GOLD PRICE BUTTON ANIMATION FAILSAFE
-         Forces the animation via inline style if the CSS declaration was
-         lost (stale browser cache after a new deployment).
-         ───────────────────────────────────────── */
-      (function bgsEnsureGoldAnim() {
-        function applyAnim() {
-          var btn = document.getElementById('bgs-ticker-toggle');
-          if (!btn) return;
-          if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-          var current = window.getComputedStyle(btn).animationName;
-          if (!current || current === 'none') {
-            btn.style.animation = 'bgs-gold-pulse 2.4s ease-in-out infinite';
-          }
-        }
-        document.addEventListener('DOMContentLoaded', function () { setTimeout(applyAnim, 800); });
-        setTimeout(applyAnim, 2500);
-      })();
 
       // Run every 600ms — fast enough to catch React re-renders, light enough for production
       setInterval(tick, 600);

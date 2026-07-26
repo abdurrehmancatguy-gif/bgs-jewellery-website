@@ -158,20 +158,42 @@
         font-family: 'Inter','Helvetica Neue',sans-serif;
       }
 
+      /* Square, centred box — asymmetric padding would put the pivot off the
+         icon's centre and make it orbit instead of spin in place. */
       #bgs-gold-ticker .bgt-refresh {
         background: none;
         border: none;
         cursor: pointer;
         color: #444;
-        font-size: 0.85rem;
-        padding: 0 0 0 0.5rem;
-        line-height: 1;
-        transition: color 0.2s, transform 0.3s;
+        padding: 0;
+        margin-left: 0.5rem;
+        line-height: 0;
+        transition: color 0.2s;
         font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 15px;
+        height: 15px;
+        flex: none;
       }
       #bgs-gold-ticker .bgt-refresh:hover { color: #d4af37; }
-      #bgs-gold-ticker .bgt-refresh.spinning { animation: bgtSpin 1s linear infinite; }
+
+      /* An SVG rather than the ↻ glyph: a text glyph sits on a baseline, so
+         its visual centre is not the centre of its box and it wobbles. */
+      #bgs-gold-ticker .bgt-refresh svg {
+        width: 15px;
+        height: 15px;
+        display: block;
+        transform-origin: 50% 50%;
+      }
+      #bgs-gold-ticker .bgt-refresh.spinning svg {
+        animation: bgtSpin 0.9s linear infinite;
+      }
       @keyframes bgtSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+      @media (prefers-reduced-motion: reduce) {
+        #bgs-gold-ticker .bgt-refresh.spinning svg { animation-duration: 2.4s; }
+      }
 
       #bgs-gold-ticker .bgt-row {
         display: flex;
@@ -2328,7 +2350,13 @@
           '</button>' +
           '<div class="bgt-header">' +
             '<span class="bgt-title">Gold Rates &middot; AED/g</span>' +
-            '<button class="bgt-refresh" title="Refresh gold prices" onclick="window.bgsRefreshGold()">&#8635;</button>' +
+            '<button class="bgt-refresh" title="Refresh gold prices" onclick="window.bgsRefreshGold()" aria-label="Refresh gold prices">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+                   'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                '<path d="M20.5 12a8.5 8.5 0 1 1-2.49-6.01"/>' +
+                '<polyline points="20.5 3.5 20.5 9 15 9"/>' +
+              '</svg>' +
+            '</button>' +
           '</div>' +
           '<div id="bgt-rows"></div>' +
           '<div class="bgt-footer">' +
@@ -2431,6 +2459,24 @@
         cells.innerHTML = html;
       }
 
+      /* Stop on an iteration boundary so the icon lands back at 0deg.
+         Dropping the class mid-turn would snap it to whatever angle it
+         happened to be at. */
+      function bgsSpinStop(btn) {
+        if (!btn || !btn.classList.contains('spinning')) return;
+        var svg = btn.querySelector('svg');
+        var stop = function () {
+          if (svg) svg.removeEventListener('animationiteration', stop);
+          btn.classList.remove('spinning');
+        };
+        if (!svg) return stop();
+        svg.addEventListener('animationiteration', stop);
+        // Failsafe: animations don't tick in a hidden tab, so never hang spinning
+        setTimeout(function () {
+          if (btn.classList.contains('spinning')) stop();
+        }, 3000);
+      }
+
       window.bgsRefreshGold = async function () {
         var btn = document.querySelector('#bgs-gold-ticker .bgt-refresh');
         if (btn) btn.classList.add('spinning');
@@ -2438,7 +2484,7 @@
         var admin22 = getAdminRate('22K');
         currentBase22K = admin22 !== null ? admin22 : price;
         renderTickerRows(computeAllRates(currentBase22K));
-        if (btn) btn.classList.remove('spinning');
+        bgsSpinStop(btn);
         // Also refresh the React built-in box
         var reactRefresh = document.querySelector('[title="Refresh price"]');
         if (reactRefresh) reactRefresh.click();

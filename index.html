@@ -5,7 +5,7 @@
     <link rel="icon" href="/logo.png?v=2" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BGS Jewellery</title>
-    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=5"></script>
+    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=7"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-d0osuhxy.css?v=2">
 
     <!-- ═══════════════════════════════════════════════════════════════
@@ -369,6 +369,29 @@
         text-align: center;
         display: none;
       }
+
+      /* ── Undo for Delete All Stock ──
+         Only rendered when stock is empty and a local copy exists, so it is
+         invisible in normal use. */
+      #bgs-stock-undo {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-left: 0.6rem;
+        font-size: 0.72rem;
+        color: #888;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      #bgs-stock-undo button {
+        background: none;
+        border: none;
+        border-bottom: 1px solid rgba(212,175,55,0.5);
+        color: #d4af37;
+        cursor: pointer;
+        font: inherit;
+        padding: 0 0 1px;
+      }
+      #bgs-stock-undo button:hover { color: #f0d47c; }
 
       /* ── Hero Products Admin Panel ── */
       #bgs-hero-panel {
@@ -1001,10 +1024,12 @@
         > div[class*="sm:bottom-24"] > p { display: none !important; }
 
       /* ── GOLD RATE BAND ──
-         Sits inside the box, along its bottom panel. left/right/bottom are
-         set from JS (bgsPositionHeroChrome) because the artwork is bg-cover:
-         the frame's on-screen position depends on the viewport ratio, so a
-         fixed inset would drift off the box. */
+         Sits below the box, in the artwork's black margin, spanning the box's
+         full width. left/right/top are set from JS (bgsPositionHeroChrome)
+         because the artwork is bg-cover: the frame's on-screen position
+         depends on the viewport ratio, so a fixed inset would drift off it.
+         It stays transparent until positioned, so nothing flashes at the
+         fallback offsets below. */
       #bgs-hero-rates {
         position: absolute;
         bottom: 2.5rem;
@@ -2366,28 +2391,34 @@
         var offY = (vh - F.ih * scale) / 2;
         var pad = 26 * scale;                                 // breathing room inside the frame
 
-        var left   = F.left * scale + offX + pad;
-        var right  = vw - (F.right * scale + offX) + pad;
-        var bottom = vh - (F.bottom * scale + offY) + pad;
+        var frameBottomY = F.bottom * scale + offY;           // box's lower frame line
+        var left   = F.left * scale + offX;                   // flush with the frame edges
+        var right  = vw - (F.right * scale + offX);
+        var insetRight = right + pad;                         // inset version, for the CTAs
 
-        // Clamp so a very tall/narrow viewport can't push it off-screen
+        /* Rate band: below the box in the artwork's black margin, spanning the
+           box's full width. Positioned from the top so it hangs off the frame
+           line; pinned to the hero's floor on ratios where the crop leaves no
+           margin, which is the only case it could otherwise run off-screen. */
         var bar = document.getElementById('bgs-hero-rates');
         if (bar) {
+          var barH = bar.offsetHeight || 54;
           bar.style.left   = Math.max(8, left) + 'px';
           bar.style.right  = Math.max(8, right) + 'px';
-          bar.style.bottom = Math.max(8, bottom) + 'px';
+          bar.style.bottom = 'auto';
+          bar.style.top    = Math.max(8, Math.min(frameBottomY + 14 * scale,
+                                                  vh - barH - 8)) + 'px';
         }
 
-        /* CTA group: sits off the box's right edge rather than the viewport's,
-           and rides on top of the band so the two can never collide. The base
-           rule uses !important to beat Tailwind's classes, so these have to be
-           set with priority to win. */
+        /* CTA group: off the box's right edge rather than the viewport's. With
+           the band gone from inside the box, these drop to just above the frame
+           line instead of riding on top of it. The base rule uses !important to
+           beat Tailwind's classes, so these have to be set with priority. */
         var cta = document.querySelector(BGS_HERO_CTA_SEL);
         if (cta) {
-          var barH = bar ? bar.offsetHeight : 54 * scale;
-          cta.style.setProperty('right', Math.max(8, right + 48 * scale) + 'px', 'important');
+          cta.style.setProperty('right', Math.max(8, insetRight + 48 * scale) + 'px', 'important');
           cta.style.setProperty('bottom',
-            Math.max(8, bottom + barH + 30 * scale) + 'px', 'important');
+            Math.max(8, vh - frameBottomY + pad) + 'px', 'important');
         }
 
         /* Headline: Tailwind pins it at a fixed 14% of the hero, but the
@@ -2438,6 +2469,14 @@
         hero.appendChild(bar);
         bgsPositionHeroChrome();
 
+        /* The band's own height feeds the clamp that keeps it on screen, and
+           that height moves as rows fill in and webfonts swap. Watch it rather
+           than guessing when it has settled. */
+        if (window.ResizeObserver) {
+          var ro = new ResizeObserver(function () { bgsPositionHeroChrome(); });
+          ro.observe(bar);
+        }
+
         if (_bgsLastRates) renderHeroRateBar(_bgsLastRates);
         // Fade in on the next frame so the transition actually runs.
         // rAF is throttled to zero in a background tab, so a timer backs it up.
@@ -2467,6 +2506,11 @@
             '</div>';
         }
         cells.innerHTML = html;
+        /* The band's height isn't final until its rows exist, and the vertical
+           clamp is computed from that height — position after filling it, or
+           the first placement uses an empty bar's height and hangs off the
+           bottom of the hero. */
+        bgsPositionHeroChrome();
       }
 
       // Listen for admin gold updates
@@ -3107,6 +3151,93 @@
       }
 
       /* ─────────────────────────────────────────
+         ADMIN — DELETE ALL STOCK
+
+         The admin's own button used to reset the inventory back to the 24 demo
+         products; it now empties it instead. The confirmation lives here rather
+         than in the bundle so it can be read and changed.
+
+         Note it writes "[]" and never removes fg_inventory: the app's reader
+         falls back to the demo products when the key is absent, so removing it
+         would repopulate the shop instead of clearing it.
+         ───────────────────────────────────────── */
+      var BGS_STOCK_BACKUP_KEY = 'bgs_stock_backup';
+
+      function bgsReadInventory() {
+        try {
+          var raw = _origGetItem.call(localStorage, 'fg_inventory');
+          var arr = raw ? JSON.parse(raw) : [];
+          return Array.isArray(arr) ? arr : [];
+        } catch (e) { return []; }
+      }
+
+      /* Called by the admin button before it clears React's state. Returning
+         false leaves everything untouched. */
+      window.bgsConfirmDeleteAllStock = function (items) {
+        var list = (items && items.length) ? items : bgsReadInventory();
+        if (!list.length) {
+          alert('There is no stock to delete.');
+          return false;
+        }
+        var typed = window.prompt(
+          'This deletes all ' + list.length + ' products from the live site and ' +
+          'every device, straight away.\n\n' +
+          'A copy is kept on this browser only, so you can undo it here — but not ' +
+          'from another device.\n\nType DELETE to confirm.');
+        if (typed === null || typed.trim().toUpperCase() !== 'DELETE') return false;
+
+        /* Written past the sync patch on purpose. Every fg_* key syncs, so a
+           backup stored as one would travel with the wipe and be no safety net. */
+        try {
+          _origSetItem.call(localStorage, BGS_STOCK_BACKUP_KEY,
+            JSON.stringify({ ts: Date.now(), items: list }));
+        } catch (e) { /* quota — the Export button is the durable backup */ }
+        return true;
+      };
+
+      window.bgsRestoreStockBackup = function () {
+        var snap;
+        try { snap = JSON.parse(_origGetItem.call(localStorage, BGS_STOCK_BACKUP_KEY)); }
+        catch (e) { snap = null; }
+        if (!snap || !snap.items || !snap.items.length) return 0;
+        localStorage.setItem('fg_inventory', JSON.stringify(snap.items));
+        window.dispatchEvent(new Event('fg_inventory_updated'));
+        return snap.items.length;
+      };
+
+      /* Undo sits next to the button, and only while it is useful: stock empty
+         and a local copy still around. */
+      function injectStockUndo() {
+        var btn = null;
+        var buttons = document.querySelectorAll('button');
+        for (var i = 0; i < buttons.length; i++) {
+          if (buttons[i].textContent.trim() === 'Delete All Stock') { btn = buttons[i]; break; }
+        }
+        var existing = document.getElementById('bgs-stock-undo');
+        var snapRaw = _origGetItem.call(localStorage, BGS_STOCK_BACKUP_KEY);
+        var show = !!btn && !bgsReadInventory().length && !!snapRaw;
+
+        if (!show) {
+          if (existing) existing.remove();
+          return;
+        }
+        if (existing) return;
+
+        var count = 0;
+        try { count = (JSON.parse(snapRaw).items || []).length; } catch (e) {}
+        if (!count) return;
+
+        var wrap = document.createElement('span');
+        wrap.id = 'bgs-stock-undo';
+        wrap.innerHTML = '<span>Deleted ' + count + '.</span><button>Undo on this device</button>';
+        wrap.querySelector('button').addEventListener('click', function () {
+          var n = window.bgsRestoreStockBackup();
+          wrap.textContent = n ? 'Restored ' + n + ' products.' : 'No local copy to restore.';
+        });
+        btn.insertAdjacentElement('afterend', wrap);
+      }
+
+      /* ─────────────────────────────────────────
          ADMIN PANEL — ALL KARAT INPUTS
          ───────────────────────────────────────── */
       function injectAdminGoldPanel() {
@@ -3719,6 +3850,9 @@
         if (adminInjected && !document.getElementById('bgs-admin-gold-panel')) {
           adminInjected = false;
         }
+
+        // Undo affordance beside the admin's Delete All Stock button
+        injectStockUndo();
 
         // Hero products admin panel
         if (!heroAdminInjected) {

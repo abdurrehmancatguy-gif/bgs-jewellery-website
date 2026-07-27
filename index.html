@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/logo.png" />
+    <link rel="icon" href="/logo.png?v=2" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BGS Jewellery</title>
     <script type="module" crossorigin src="/assets/index-bgsv2.js?v=3"></script>
@@ -63,175 +63,6 @@
          BGS JEWELRY — FEATURE INJECTION STYLES
          ═══════════════════════════════════════════ -->
     <style id="bgs-feature-styles">
-
-      /* ── GOLD PRICE TICKER ── */
-      #bgs-gold-ticker {
-        position: fixed;
-        top: 6rem; /* below the fixed 82px nav bar so it never overlaps the menu */
-        right: 1.5rem;
-        z-index: 8900;
-        background: linear-gradient(135deg, #080808 0%, #110e06 50%, #080808 100%);
-        border: 1px solid rgba(212,175,55,0.28);
-        border-radius: 3px;
-        padding: 1rem 1.2rem 0.85rem;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,0,0,0.5);
-        transform: translateX(calc(100% + 1.6rem));
-        transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
-        min-width: 210px;
-        max-width: 260px;
-        overflow: visible;
-      }
-      #bgs-gold-ticker.bgt-open {
-        transform: translateX(0);
-      }
-
-      /* ── TICKER TOGGLE TAB ── */
-      #bgs-ticker-toggle {
-        position: absolute;
-        top: 0;
-        left: -30px;
-        width: 30px;
-        height: 122px;
-        background: linear-gradient(135deg, #080808 0%, #110e06 50%, #080808 100%);
-        border: 1px solid rgba(212,175,55,0.28);
-        border-right: none;
-        border-radius: 3px 0 0 3px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        box-shadow: -5px 0 14px rgba(0,0,0,0.55);
-        transition: background 0.2s;
-      }
-      @keyframes bgs-gold-pulse {
-        0%   { box-shadow: -5px 0 16px rgba(0,0,0,0.55), 0 0 10px rgba(212,175,55,0.15), -2px 0 14px rgba(212,175,55,0.12); transform: scaleY(1); }
-        50%  { box-shadow: -5px 0 20px rgba(0,0,0,0.38), 0 0 32px rgba(212,175,55,0.68), -4px 0 38px rgba(212,175,55,0.48), 0 0 6px rgba(255,220,80,0.9); transform: scaleY(1.028); }
-        100% { box-shadow: -5px 0 16px rgba(0,0,0,0.55), 0 0 10px rgba(212,175,55,0.15), -2px 0 14px rgba(212,175,55,0.12); transform: scaleY(1); }
-      }
-
-      #bgs-ticker-toggle {
-        animation: bgs-gold-pulse 2.4s ease-in-out infinite;
-        will-change: transform, box-shadow;
-      }
-      #bgs-ticker-toggle:hover {
-        animation: none;
-        background: linear-gradient(135deg, #101010 0%, #1a1300 50%, #101010 100%);
-        box-shadow: -5px 0 22px rgba(0,0,0,0.5), 0 0 24px rgba(212,175,55,0.35), -4px 0 28px rgba(212,175,55,0.2);
-        transform: scaleY(1.01);
-        transition: box-shadow 0.35s ease, transform 0.35s ease, background 0.2s;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        #bgs-ticker-toggle { animation: none; }
-      }
-
-      .bgt-tab-label {
-        writing-mode: vertical-rl;
-        font-size: 0.55rem;
-        letter-spacing: 0.3em;
-        text-transform: uppercase;
-        color: rgba(212,175,55,0.8);
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-        line-height: 1;
-        white-space: nowrap;
-        user-select: none;
-        pointer-events: none;
-        transition: color 0.2s;
-      }
-      #bgs-ticker-toggle:hover .bgt-tab-label { color: #d4af37; }
-
-      #bgs-gold-ticker .bgt-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.7rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid rgba(212,175,55,0.12);
-      }
-
-      #bgs-gold-ticker .bgt-title {
-        font-size: 0.52rem;
-        letter-spacing: 0.32em;
-        text-transform: uppercase;
-        color: #9f8a48;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-      }
-
-      #bgs-gold-ticker .bgt-refresh {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: #444;
-        font-size: 0.85rem;
-        padding: 0 0 0 0.5rem;
-        line-height: 1;
-        transition: color 0.2s, transform 0.3s;
-        font-family: inherit;
-      }
-      #bgs-gold-ticker .bgt-refresh:hover { color: #d4af37; }
-      #bgs-gold-ticker .bgt-refresh.spinning { animation: bgtSpin 1s linear infinite; }
-      @keyframes bgtSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-
-      #bgs-gold-ticker .bgt-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.28rem 0;
-        border-bottom: 1px solid rgba(255,255,255,0.03);
-      }
-      #bgs-gold-ticker .bgt-row:last-child { border-bottom: none; }
-
-      #bgs-gold-ticker .bgt-karat {
-        font-size: 0.78rem;
-        font-weight: 500;
-        letter-spacing: 0.12em;
-        color: rgba(255,255,255,0.45);
-        text-transform: uppercase;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-        min-width: 36px;
-      }
-
-      #bgs-gold-ticker .bgt-price {
-        font-size: 0.78rem;
-        font-weight: 500;
-        color: rgba(212,175,55,0.85);
-        letter-spacing: 0.03em;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-      }
-
-      #bgs-gold-ticker .bgt-unit {
-        font-size: 0.62rem;
-        font-weight: 400;
-        color: #555;
-        margin-left: 0.22rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-      }
-
-      #bgs-gold-ticker .bgt-admin-star {
-        font-size: 0.5rem;
-        color: #9f8a48;
-        margin-left: 0.15rem;
-      }
-
-      #bgs-gold-ticker .bgt-footer {
-        margin-top: 0.6rem;
-        padding-top: 0.45rem;
-        border-top: 1px solid rgba(255,255,255,0.04);
-      }
-
-      #bgs-gold-ticker .bgt-source {
-        font-size: 0.5rem;
-        color: #383838;
-        text-decoration: none;
-        letter-spacing: 0.07em;
-        transition: color 0.2s;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-        display: block;
-      }
-      #bgs-gold-ticker .bgt-source:hover { color: #9f8a48; }
 
       /* Hide the original React 22K-only price box */
       #bgs-hide-react-gold { display: none !important; }
@@ -805,40 +636,6 @@
           border-radius: 20px;
         }
 
-        #bgs-gold-ticker {
-          bottom: 0;
-          top: auto;
-          right: 0;
-          left: 0;
-          max-width: 100%;
-          border-radius: 0;
-          border-left: none;
-          border-right: none;
-          transform: translateY(100%);
-          transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
-        }
-        #bgs-gold-ticker.bgt-open {
-          transform: translateY(0);
-        }
-        /* toggle becomes a tab on the sheet's top edge — always reachable */
-        #bgs-ticker-toggle {
-          display: flex;
-          top: -30px;
-          right: 14px;
-          left: auto;
-          width: auto;
-          min-width: 96px;
-          height: 30px;
-          padding: 0 0.9rem;
-          border: 1px solid rgba(212,175,55,0.28);
-          border-bottom: none;
-          border-radius: 4px 4px 0 0;
-          box-shadow: 0 -6px 14px rgba(0,0,0,0.45);
-        }
-        #bgs-ticker-toggle .bgt-tab-label {
-          writing-mode: horizontal-tb;
-          font-size: 0.58rem;
-        }
         .bgs-dd-btn { font-size: 0.72rem; padding: 0.35rem 0.5rem; }
         #bgs-about-modal { padding: 2rem 1.5rem 1.75rem; }
         #bgs-about-modal h2 { font-size: 1.5rem; }
@@ -1191,6 +988,258 @@
         }
         #bgs-hpd-img { max-height: 92vw; aspect-ratio: 1 / 1; }
         #bgs-hpd-body { padding: 1.5rem 1.25rem 3rem; overflow-y: visible; }
+      }
+
+      /* ── HERO COPY REMOVED ──
+         Both descriptive paragraphs are dropped. Targeted by their Tailwind
+         position classes rather than the JS-added lift classes so they never
+         flash in before the script runs. The right-hand block keeps its
+         Browse More / Collection buttons — only its <p> goes. */
+      section.relative.w-full.overflow-hidden.bg-black
+        > div[class*="bottom-14"][class*="left-10"] { display: none !important; }
+      section.relative.w-full.overflow-hidden.bg-black
+        > div[class*="sm:bottom-24"] > p { display: none !important; }
+
+      /* ── GOLD RATE BAND ──
+         Sits inside the box, along its bottom panel. left/right/bottom are
+         set from JS (bgsPositionHeroChrome) because the artwork is bg-cover:
+         the frame's on-screen position depends on the viewport ratio, so a
+         fixed inset would drift off the box. */
+      #bgs-hero-rates {
+        position: absolute;
+        bottom: 2.5rem;
+        left: 2.5rem;
+        right: 2.5rem;
+        z-index: 50;
+        display: flex;
+        align-items: stretch;
+        background: linear-gradient(180deg, rgba(6,6,6,0.7) 0%, rgba(14,11,5,0.76) 50%, rgba(6,6,6,0.7) 100%);
+        border: 1px solid rgba(212,175,55,0.22);
+        border-radius: 2px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 14px 34px rgba(0,0,0,0.45);
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16,1,0.3,1);
+      }
+      #bgs-hero-rates.bghr-in { opacity: 1; transform: translateY(0); }
+
+      #bgs-hero-rates .bghr-label {
+        display: flex;
+        align-items: center;
+        padding: 0 1.15rem;
+        border-right: 1px solid rgba(212,175,55,0.12);
+        font-size: 0.5rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: #9f8a48;
+        white-space: nowrap;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+
+      #bgs-hero-rates .bghr-cells {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+      }
+
+      #bgs-hero-rates .bghr-cell {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        padding: 0.72rem 0.4rem 0.78rem;
+        border-right: 1px solid rgba(255,255,255,0.05);
+      }
+      #bgs-hero-rates .bghr-cell:last-child { border-right: none; }
+
+      /* karat sits above the price */
+      #bgs-hero-rates .bghr-k {
+        font-size: 0.53rem;
+        font-weight: 500;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.42);
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        line-height: 1;
+      }
+
+      #bgs-hero-rates .bghr-p {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: rgba(212,175,55,0.92);
+        letter-spacing: 0.02em;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      #bgs-hero-rates .bghr-cell.bghr-22k .bghr-p { color: #d4af37; }
+      #bgs-hero-rates .bghr-cell.bghr-22k .bghr-k { color: rgba(212,175,55,0.6); }
+
+      #bgs-hero-rates .bghr-u {
+        font-size: 0.52rem;
+        font-weight: 400;
+        color: rgba(255,255,255,0.3);
+        margin-left: 0.22rem;
+        letter-spacing: 0.09em;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+
+      #bgs-hero-rates .bghr-star {
+        font-size: 0.45rem;
+        color: #9f8a48;
+        margin-left: 0.15rem;
+        vertical-align: super;
+      }
+
+      /* ── HERO CTA BUTTONS ──
+         right/bottom here are only the pre-script fallback, so the buttons
+         don't flash at Tailwind's default spot; bgsPositionHeroChrome takes
+         over on load and anchors them to the box frame instead. */
+      section.relative.w-full.overflow-hidden.bg-black
+        > div[class*="sm:bottom-24"] {
+        right: 1.5rem !important;
+        bottom: 10rem !important;
+        align-items: flex-end !important;
+      }
+      section.relative.w-full.overflow-hidden.bg-black
+        > div[class*="sm:bottom-24"] > div { justify-content: flex-end !important; }
+
+      @media (max-width: 900px) {
+        #bgs-hero-rates .bghr-label { display: none; }
+      }
+
+      @media (max-width: 640px) {
+        /* left/right/bottom come from bgsPositionHeroChrome */
+        #bgs-hero-rates .bghr-cell { padding: 0.55rem 0.2rem 0.6rem; gap: 0.24rem; }
+        #bgs-hero-rates .bghr-k { font-size: 0.46rem; letter-spacing: 0.16em; }
+        #bgs-hero-rates .bghr-p { font-size: 0.72rem; }
+        #bgs-hero-rates .bghr-u { display: none; }
+        section.relative.w-full.overflow-hidden.bg-black
+          > div[class*="sm:bottom-24"] { bottom: 8rem !important; }
+      }
+
+      /* ══ NAVIGATION — BLACK & GOLD ══
+         The stock pill is glassy white, which reads as a foreign UI chip
+         on top of the black/gold artwork. Restyled to the brand palette. */
+
+      /* Scrim: extends past the bar so the box's top gold frame line, which
+         runs right behind the wordmark, doesn't cut through the lettering. */
+      nav.fixed::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 -2.75rem 0;
+        background: linear-gradient(180deg,
+          rgba(0,0,0,0.92) 0%,
+          rgba(0,0,0,0.72) 45%,
+          rgba(0,0,0,0.28) 76%,
+          rgba(0,0,0,0) 100%);
+        pointer-events: none;
+        z-index: -1;
+      }
+      nav.fixed { padding-left: 2rem; padding-right: 2rem; }
+
+      /* Wordmark: give it room so it clears the artwork's top-left corner */
+      nav.fixed > div:first-child { gap: 0.6rem !important; }
+      nav.fixed img[src*="logo"] { width: 40px !important; height: 40px !important; }
+
+      /* The stock wordmark gradient drops to rgb(122,88,8) mid-string, which
+         all but disappears on black. Same metallic sweep, lifted floor. */
+      nav.fixed span[style*="Playfair"] {
+        background: linear-gradient(120deg,
+          #f7ecc4 0%, #e6cd6a 20%, #c9a233 38%,
+          #f4de92 54%, #d2ad39 72%, #f0d685 100%) text !important;
+        letter-spacing: 0.015em;
+      }
+
+      /* The pill itself */
+      nav .bg-white\/20 {
+        background: rgba(10,9,6,0.62) !important;
+        border: 1px solid rgba(212,175,55,0.28) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        box-shadow: 0 10px 34px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+      }
+
+      /* Inactive items — warm off-white, gold on hover */
+      nav .bg-white\/20 button {
+        color: rgba(245,236,214,0.72) !important;
+        letter-spacing: 0.04em;
+        transition: color 0.22s ease, background-color 0.22s ease !important;
+      }
+      nav .bg-white\/20 button:hover {
+        background: rgba(212,175,55,0.12) !important;
+        color: #e8c95f !important;
+      }
+
+      /* Active item — gold fill, matching the Browse More button */
+      nav .bg-white\/20 button.bg-white {
+        background: linear-gradient(135deg, #e8c95f 0%, #d4af37 55%, #b8942c 100%) !important;
+        color: #0a0a0a !important;
+        font-weight: 600 !important;
+        box-shadow: 0 2px 10px rgba(212,175,55,0.3) !important;
+      }
+      nav .bg-white\/20 button.bg-white:hover {
+        background: linear-gradient(135deg, #f0d675 0%, #dcb943 55%, #c49e30 100%) !important;
+        color: #0a0a0a !important;
+      }
+
+      /* Our injected dropdown triggers inherit the same treatment */
+      nav .bgs-dd-btn {
+        color: rgba(245,236,214,0.72) !important;
+        transition: color 0.22s ease, background-color 0.22s ease !important;
+      }
+      nav .bgs-dd-btn:hover { color: #e8c95f !important; background: rgba(212,175,55,0.12) !important; }
+
+      /* Below lg the wordmark is hidden and the pill wraps to two rows; its
+         `auto` track then eats the whole grid and collapses the logo column
+         to 0px, so the mark vanishes. Reserve the icon its own track. */
+      @media (max-width: 1023px) {
+        nav.fixed {
+          grid-template-columns: 44px minmax(0, 1fr) 0 !important;
+          column-gap: 0.5rem !important;
+        }
+        nav.fixed img[src*="logo"] { flex: 0 0 auto !important; }
+      }
+
+      @media (max-width: 640px) {
+        nav.fixed { padding-left: 1rem; padding-right: 1rem; }
+        nav.fixed img[src*="logo"] { width: 34px !important; height: 34px !important; }
+        nav.fixed { grid-template-columns: 38px minmax(0, 1fr) 0 !important; }
+        /* Tighten the items so reserving the logo track doesn't push the
+           pill from two wrapped rows to three. */
+        nav .bg-white\/20 {
+          padding-left: 0.3rem !important;
+          padding-right: 0.3rem !important;
+          gap: 0.05rem !important;
+        }
+        nav .bg-white\/20 button, nav .bgs-dd-btn {
+          padding-left: 0.45rem !important;
+          padding-right: 0.45rem !important;
+          font-size: 0.7rem !important;
+        }
+        /* Reserving the logo track leaves too little width for the items to
+           wrap into two rows, and three rows makes the bar 130px tall. Put
+           them on one swipeable row instead: logo stays visible, every item
+           stays reachable, and the bar drops to a single row. */
+        nav .bg-white\/20 {
+          flex-wrap: nowrap !important;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scrollbar-width: none;
+          -webkit-overflow-scrolling: touch;
+          justify-content: flex-start !important;
+        }
+        nav .bg-white\/20::-webkit-scrollbar { display: none; }
+        nav .bg-white\/20 button, nav .bgs-dd-btn { flex: 0 0 auto !important; }
+        /* Dropdown menus are anchored to the inner .bgs-dd-wrap, so letting
+           the outer wrapper dissolve keeps them positioned correctly. */
+        #bgs-collection-nav { display: contents !important; }
       }
     </style>
   </head>
@@ -1629,6 +1678,7 @@
 
       var _origSetItem = Storage.prototype.setItem;
       var _origGetItem = Storage.prototype.getItem;
+      var _origRemoveItem = Storage.prototype.removeItem;
 
       /* ── INVENTORY FILTER (diamond mode + category) ──
          Override getItem so React sees pre-filtered inventory without any
@@ -1738,6 +1788,17 @@
         return _origSetItem.call(this, key, val);
       };
 
+      /* Deleting an fg_* key has to push a snapshot too. Without this the
+         cloud copy keeps the old value, and the next pull — including the one
+         on page load — puts the deleted key straight back. */
+      Storage.prototype.removeItem = function (key) {
+        var ret = _origRemoveItem.call(this, key);
+        if (key && key.indexOf('fg_') === 0 && this === window.localStorage) {
+          bgsSyncToServer();
+        }
+        return ret;
+      };
+
       /* ─────────────────────────────────────────
          UNIVERSAL LIVE SYNC
          Pushes ALL fg_* keys (inventory, passwords, settings) to server
@@ -1746,8 +1807,13 @@
          ───────────────────────────────────────── */
       var _bgsSyncTimer = null;
       var _lastPulledSig = '';
+      /* When this device last changed an fg_* key. Snapshots stamped earlier
+         than this predate the change, so applying them would undo it — see the
+         staleness check in the Firestore listener. */
+      var _lastLocalMutationTs = 0;
 
       function bgsSyncToServer() {
+        _lastLocalMutationTs = Date.now();
         clearTimeout(_bgsSyncTimer);
         _bgsSyncTimer = setTimeout(function () {
           var snapshot = {};
@@ -1800,16 +1866,39 @@
         if (sig === _lastPulledSig) return;
         _lastPulledSig = sig;
         var changed = false;
+        var present = 0;
         Object.keys(snapshot).forEach(function (k) {
           if (!k.startsWith('fg_') || snapshot[k] === null) return;
+          present++;
           if (_origGetItem.call(localStorage, k) !== snapshot[k]) {
             _origSetItem.call(localStorage, k, snapshot[k]);
             changed = true;
           }
         });
+
+        /* Mirror deletions. A key cleared elsewhere is simply absent from the
+           snapshot, so writing-only would resurrect it on the next pull — which
+           is what made a cleared gold rate come back on refresh. Guarded on a
+           non-empty snapshot so a half-written or corrupt doc can't wipe the
+           site, and fg_admin_pw is never auto-deleted: a stale password is a far
+           smaller problem than silently resetting it to the default. */
+        if (present) {
+          var stale = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var lk = localStorage.key(i);
+            if (!lk || lk.indexOf('fg_') !== 0 || lk === 'fg_admin_pw') continue;
+            if (snapshot[lk] === undefined || snapshot[lk] === null) stale.push(lk);
+          }
+          stale.forEach(function (lk) {
+            _origRemoveItem.call(localStorage, lk);
+            changed = true;
+          });
+        }
+
         if (changed) {
           console.log('[BGS] Applied update from cloud.');
           window.dispatchEvent(new Event('fg_inventory_updated'));
+          window.dispatchEvent(new Event('bgs_gold_updated'));
         }
       }
 
@@ -1821,6 +1910,11 @@
             function (doc) {
               if (!doc.exists) return;
               var d = doc.data() || {};
+              /* Drop snapshots older than our own last edit. A push made
+                 earlier in this page's life can still be in flight when the
+                 user changes something, and applying it afterwards silently
+                 reinstates the value they just cleared. */
+              if (typeof d.ts === 'number' && d.ts < _lastLocalMutationTs) return;
               var snapshot;
               try { snapshot = JSON.parse(d.json || '{}'); }
               catch (e) { return; }
@@ -2095,16 +2189,34 @@
         return (!isNaN(n) && n > 0) ? n : null;
       }
 
-      function getCached22K() {
+      /* Cache shape: { rates: {24K:…,22K:…}, price: <22K>, ts: <ms> }
+         `price` is kept so caches written by older builds still load. */
+      function readGoldCache() {
         try {
           var raw = localStorage.getItem('fg_gold_cache');
           if (!raw) return null;
           var d = JSON.parse(raw);
-          if (Date.now() - d.ts < 30 * 60 * 1000 && d.price >= 150 && d.price <= 900) {
-            return d.price;
-          }
+          if (Date.now() - d.ts >= 30 * 60 * 1000) return null;
+          return d;
         } catch (e) {}
         return null;
+      }
+
+      function getCached22K() {
+        var d = readGoldCache();
+        if (!d) return null;
+        var p = (d.rates && d.rates['22K']) || d.price;
+        return (p >= 150 && p <= 900) ? p : null;
+      }
+
+      /* Last real per-karat numbers scraped from dubaicityofgold.com.
+         Used when a later fetch fails, so we repeat the source's own figures
+         instead of inventing them from purity ratios. */
+      function getCachedRate(k) {
+        var d = readGoldCache();
+        if (!d || !d.rates) return null;
+        var p = d.rates[k];
+        return (typeof p === 'number' && p >= 50 && p <= 1500) ? p : null;
       }
 
       function computeAllRates(base22K) {
@@ -2112,11 +2224,16 @@
         for (var i = 0; i < KARATS.length; i++) {
           var k = KARATS[i];
           var admin = getAdminRate(k);
+          var cached = getCachedRate(k);
           if (admin !== null) {
-            rates[k] = admin;
+            rates[k] = admin;              // shop override wins
           } else if (liveRates[k]) {
-            rates[k] = liveRates[k];
+            rates[k] = liveRates[k];       // live from dubaicityofgold.com
+          } else if (cached !== null) {
+            rates[k] = cached;             // last real figure from that source
           } else {
+            // Last resort only — the source's spreads are not pure purity
+            // ratios, so this is an approximation, not their published rate.
             rates[k] = parseFloat((base22K * KARAT_RATIOS[k]).toFixed(2));
           }
         }
@@ -2152,8 +2269,18 @@
                 }
               });
             });
+            // Cache every karat we actually got, so a later failed fetch can
+            // repeat the source's real figures rather than deriving them.
             if (liveRates['22K']) {
-              localStorage.setItem('fg_gold_cache', JSON.stringify({ price: liveRates['22K'], ts: Date.now() }));
+              var snap = {};
+              for (var ki = 0; ki < KARATS.length; ki++) {
+                if (liveRates[KARATS[ki]]) snap[KARATS[ki]] = liveRates[KARATS[ki]];
+              }
+              localStorage.setItem('fg_gold_cache', JSON.stringify({
+                rates: snap,
+                price: liveRates['22K'],   // legacy field for older builds
+                ts: Date.now()
+              }));
             }
           }
           if (data.error) console.log('[BGS Gold] API error:', data.error);
@@ -2164,79 +2291,189 @@
       }
 
       /* ─────────────────────────────────────────
-         GOLD PRICE TICKER WIDGET
+         GOLD RATE BAND
+         The site's only gold-rate display: karat above, price beneath.
+         Sits directly BELOW the hero rather than inside it — the box
+         artwork fills the hero and its gold frame reaches within ~60px
+         of the bottom at 16:9, and that clearance shifts with every
+         viewport ratio, so anything overlaid would land on the box.
+         Every rate update — admin override, live fetch, 5-minute
+         refresh — renders through renderHeroRateBar.
          ───────────────────────────────────────── */
-      function buildTicker() {
-        if (document.getElementById('bgs-gold-ticker')) return;
-        var el = document.createElement('div');
-        el.id = 'bgs-gold-ticker';
-        el.innerHTML =
-          '<button id="bgs-ticker-toggle" onclick="window.bgsToggleTicker()" title="Show / hide gold rates">' +
-            '<span class="bgt-tab-label">Gold Price</span>' +
-          '</button>' +
-          '<div class="bgt-header">' +
-            '<span class="bgt-title">Gold Rates &middot; AED/g</span>' +
-            '<button class="bgt-refresh" title="Refresh gold prices" onclick="window.bgsRefreshGold()">&#8635;</button>' +
-          '</div>' +
-          '<div id="bgt-rows"></div>' +
-          '<div class="bgt-footer">' +
-            '<a class="bgt-source" href="https://dubaicityofgold.com/" target="_blank" rel="noopener">Live &middot; dubaicityofgold.com &#8599;</a>' +
-          '</div>';
-        document.body.appendChild(el);
-        // Closed by default — only reopens if the visitor left it open last time
-        if (localStorage.getItem('bgt_open') === '1') {
-          setTimeout(function() { el.classList.add('bgt-open'); }, 480);
+      var _bgsLastRates = null;
+
+      /* The presentation box's gold frame, measured in hero-base.webp's own
+         pixels. The hero paints it with background-size:cover, so the frame's
+         on-screen rect has to be recomputed from the viewport each time. */
+      var BGS_BOX_FRAME = { iw: 2000, ih: 1131, left: 86, right: 1914, bottom: 1042 };
+
+      /* Top edge of the BGS monogram embossed on the closed lid, in the same
+         image pixels. The headline has to sit clear of it. */
+      var BGS_BOX_MARK_TOP = 421;
+
+      var BGS_HERO_CTA_SEL = 'section.relative.w-full.overflow-hidden.bg-black ' +
+                             '> div[class*="sm:bottom-24"]';
+
+      /* How far a line's descenders paint below its own box. Zero for normal
+         line-heights; positive once line-height drops under the font's natural
+         line, which is what the hero headline does. Cached per font — the
+         measurement is only as good as the loaded face, so the cache is dropped
+         once webfonts settle. */
+      var _bgsTextCtx = null, _bgsOverflowCache = {};
+      function bgsGlyphOverflow(el) {
+        var cs = getComputedStyle(el);
+        var key = cs.fontStyle + '|' + cs.fontWeight + '|' + cs.fontSize + '|' +
+                  cs.fontFamily + '|' + cs.lineHeight;
+        if (_bgsOverflowCache[key] !== undefined) return _bgsOverflowCache[key];
+
+        if (!_bgsTextCtx) _bgsTextCtx = document.createElement('canvas').getContext('2d');
+        _bgsTextCtx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize +
+                           ' ' + cs.fontFamily;
+        var m = _bgsTextCtx.measureText(el.textContent || 'Hg');
+        var fs = parseFloat(cs.fontSize);
+        var lh = parseFloat(cs.lineHeight) || fs;
+        var asc = m.fontBoundingBoxAscent, desc = m.fontBoundingBoxDescent;
+        var over = 0;
+        if (isFinite(asc) && isFinite(desc)) {
+          var halfLeading = (lh - (asc + desc)) / 2;
+          var ink = m.actualBoundingBoxDescent;
+          if (!isFinite(ink)) ink = desc;
+          over = Math.max(0, halfLeading + asc + ink - lh);
+        }
+        _bgsOverflowCache[key] = over;
+        return over;
+      }
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () {
+          _bgsOverflowCache = {};
+          bgsPositionHeroChrome();
+        });
+      }
+
+      /* Positions the hero furniture off the box artwork: the rate band along
+         the bottom panel, the CTA buttons inside the frame's right edge just
+         above it, and the headline above the lid's monogram. */
+      function bgsPositionHeroChrome() {
+        var hero = document.querySelector('section.relative.w-full.overflow-hidden.bg-black');
+        if (!hero) return;
+        var vw = hero.clientWidth, vh = hero.clientHeight;
+        if (!vw || !vh) return;
+
+        var F = BGS_BOX_FRAME;
+        var scale = Math.max(vw / F.iw, vh / F.ih);          // background-size: cover
+        var offX = (vw - F.iw * scale) / 2;                   // cover centres the overflow
+        var offY = (vh - F.ih * scale) / 2;
+        var pad = 26 * scale;                                 // breathing room inside the frame
+
+        var left   = F.left * scale + offX + pad;
+        var right  = vw - (F.right * scale + offX) + pad;
+        var bottom = vh - (F.bottom * scale + offY) + pad;
+
+        // Clamp so a very tall/narrow viewport can't push it off-screen
+        var bar = document.getElementById('bgs-hero-rates');
+        if (bar) {
+          bar.style.left   = Math.max(8, left) + 'px';
+          bar.style.right  = Math.max(8, right) + 'px';
+          bar.style.bottom = Math.max(8, bottom) + 'px';
+        }
+
+        /* CTA group: sits off the box's right edge rather than the viewport's,
+           and rides on top of the band so the two can never collide. The base
+           rule uses !important to beat Tailwind's classes, so these have to be
+           set with priority to win. */
+        var cta = document.querySelector(BGS_HERO_CTA_SEL);
+        if (cta) {
+          var barH = bar ? bar.offsetHeight : 54 * scale;
+          cta.style.setProperty('right', Math.max(8, right + 48 * scale) + 'px', 'important');
+          cta.style.setProperty('bottom',
+            Math.max(8, bottom + barH + 30 * scale) + 'px', 'important');
+        }
+
+        /* Headline: Tailwind pins it at a fixed 14% of the hero, but the
+           monogram's position depends on the cover crop, so at some ratios the
+           descenders land on the mark. Sit it directly above the mark instead,
+           measuring the block's own height (it changes with the responsive type
+           scale and after webfonts load). Clamped so it can't tuck under the
+           nav on a short viewport. */
+        var heading = null;
+        for (var i = 0; i < hero.children.length; i++) {
+          var kid = hero.children[i];
+          if (kid.tagName === 'DIV' && kid.querySelector('h1')) { heading = kid; break; }
+        }
+        if (heading) {
+          /* Clear the nav pill, not the nav element: the bar's box runs ~20px
+             past the pill in transparent scrim, and clamping to that steals
+             room the headline needs. offsetTop/offsetHeight rather than a
+             rect, so a scrolled page doesn't drag the value down. */
+          var pill = document.querySelector('nav.fixed [class*="bg-white"]');
+          var floor = pill ? pill.offsetTop + pill.offsetHeight + 8 : 84;
+
+          /* leading-[0.95] makes the line box shorter than the glyphs, so the
+             descenders paint below the block. Position off the ink, not the box,
+             or "tales of gold" still clips the monogram. */
+          var lines = heading.querySelectorAll('h1 span');
+          var over = lines.length ? bgsGlyphOverflow(lines[lines.length - 1]) : 0;
+
+          var markTop = BGS_BOX_MARK_TOP * scale + offY;
+          var top = markTop - (heading.offsetHeight + over) - 34 * scale;
+          heading.style.setProperty('top', Math.max(floor, top) + 'px', 'important');
         }
       }
 
-      window.bgsToggleTicker = function() {
-        var t = document.getElementById('bgs-gold-ticker');
-        if (!t) return;
-        var opening = !t.classList.contains('bgt-open');
-        t.classList.toggle('bgt-open');
-        try { localStorage.setItem('bgt_open', opening ? '1' : '0'); } catch(e) {}
-      };
+      window.addEventListener('resize', bgsPositionHeroChrome);
+      window.addEventListener('orientationchange', bgsPositionHeroChrome);
 
-      function renderTickerRows(rates) {
-        var container = document.getElementById('bgt-rows');
-        if (!container) return;
+      function injectHeroRateBar() {
+        var hero = document.querySelector('section.relative.w-full.overflow-hidden.bg-black');
+        if (!hero) return false;
+
+        if (document.getElementById('bgs-hero-rates')) return true;
+
+        var bar = document.createElement('div');
+        bar.id = 'bgs-hero-rates';
+        bar.innerHTML =
+          '<div class="bghr-label">Gold Rates &middot; AED/g</div>' +
+          '<div class="bghr-cells"></div>';
+        hero.appendChild(bar);
+        bgsPositionHeroChrome();
+
+        if (_bgsLastRates) renderHeroRateBar(_bgsLastRates);
+        // Fade in on the next frame so the transition actually runs.
+        // rAF is throttled to zero in a background tab, so a timer backs it up.
+        var reveal = function () { bar.classList.add('bghr-in'); };
+        requestAnimationFrame(function () { requestAnimationFrame(reveal); });
+        setTimeout(reveal, 400);
+        return true;
+      }
+
+      function renderHeroRateBar(rates) {
+        _bgsLastRates = rates;
+        var cells = document.querySelector('#bgs-hero-rates .bghr-cells');
+        if (!cells) return;
         var html = '';
         for (var i = 0; i < KARATS.length; i++) {
           var k = KARATS[i];
           var price = rates[k];
+          if (typeof price !== 'number') continue;
           var isAdmin = getAdminRate(k) !== null;
-          var is22 = k === '22K';
           html +=
-            '<div class="bgt-row' + (is22 ? ' bgt-22k' : '') + '">' +
-              '<span class="bgt-karat">' + k + '</span>' +
-              '<span>' +
-                '<span class="bgt-price">' + price.toFixed(2) + '</span>' +
-                '<span class="bgt-unit">AED</span>' +
-                (isAdmin ? '<span class="bgt-admin-star" title="Admin override">&#9733;</span>' : '') +
+            '<div class="bghr-cell' + (k === '22K' ? ' bghr-22k' : '') + '">' +
+              '<span class="bghr-k">' + k + '</span>' +
+              '<span class="bghr-p">' + price.toFixed(2) +
+                '<span class="bghr-u">AED</span>' +
+                (isAdmin ? '<span class="bghr-star" title="Admin override">&#9733;</span>' : '') +
               '</span>' +
             '</div>';
         }
-        container.innerHTML = html;
+        cells.innerHTML = html;
       }
-
-      window.bgsRefreshGold = async function () {
-        var btn = document.querySelector('#bgs-gold-ticker .bgt-refresh');
-        if (btn) btn.classList.add('spinning');
-        var price = await fetchLivePrice();
-        var admin22 = getAdminRate('22K');
-        currentBase22K = admin22 !== null ? admin22 : price;
-        renderTickerRows(computeAllRates(currentBase22K));
-        if (btn) btn.classList.remove('spinning');
-        // Also refresh the React built-in box
-        var reactRefresh = document.querySelector('[title="Refresh price"]');
-        if (reactRefresh) reactRefresh.click();
-      };
 
       // Listen for admin gold updates
       window.addEventListener('bgs_gold_updated', function () {
         var admin22 = getAdminRate('22K');
         if (admin22 !== null) currentBase22K = admin22;
-        renderTickerRows(computeAllRates(currentBase22K));
+        renderHeroRateBar(computeAllRates(currentBase22K));
         // Trigger React component refresh for the 22K rate
         var reactRefresh = document.querySelector('[title="Refresh price"]');
         if (reactRefresh) reactRefresh.click();
@@ -2266,13 +2503,12 @@
         } else if (cached) {
           currentBase22K = cached;
         }
-        buildTicker();
-        renderTickerRows(computeAllRates(currentBase22K));
+        renderHeroRateBar(computeAllRates(currentBase22K));
         // Fetch fresh in background
         fetchLivePrice().then(function (p) {
           var a22 = getAdminRate('22K');
           if (a22 === null) currentBase22K = p;
-          renderTickerRows(computeAllRates(currentBase22K));
+          renderHeroRateBar(computeAllRates(currentBase22K));
           updateAdminPlaceholders();
         });
       }
@@ -2283,7 +2519,7 @@
           var a22 = getAdminRate('22K');
           if (a22 === null) {
             currentBase22K = p;
-            renderTickerRows(computeAllRates(currentBase22K));
+            renderHeroRateBar(computeAllRates(currentBase22K));
           }
         });
       }, 5 * 60 * 1000);
@@ -2890,9 +3126,16 @@
       window.bgsAdminSaveRate = function (karat) {
         var input = document.getElementById('bgs-ag-input-' + karat);
         if (!input) return;
-        var val = parseFloat(input.value);
-        if (isNaN(val) || val <= 0) {
-          alert('Please enter a valid price greater than 0.');
+        /* 0 or a blank field means "no manual override" — drop the key so the
+           karat follows dubaicityofgold.com again. */
+        var raw = String(input.value).trim();
+        var val = parseFloat(raw);
+        if (raw === '' || val === 0) {
+          window.bgsAdminClearRate(karat);
+          return;
+        }
+        if (isNaN(val) || val < 0) {
+          alert('Enter a price, or 0 to follow the live rate.');
           return;
         }
         localStorage.setItem(GOLD_KEYS[karat], String(val));
@@ -3428,6 +3671,10 @@
         // Apply hero products on homepage collection
         applyHeroProducts();
 
+        // Gold rate bar inside the box's bottom panel
+        injectHeroRateBar();
+        bgsPositionHeroChrome();
+
         // Scrolling ribbon: bind pause-on-hover/press, apply custom text if set
         var _mqTrack = document.querySelector('.marquee-track');
         if (_mqTrack) bgsBindMarqueePause(_mqTrack);
@@ -3441,25 +3688,6 @@
           marqueeAdminInjected = false;
         }
       }
-
-      /* ─────────────────────────────────────────
-         GOLD PRICE BUTTON ANIMATION FAILSAFE
-         Forces the animation via inline style if the CSS declaration was
-         lost (stale browser cache after a new deployment).
-         ───────────────────────────────────────── */
-      (function bgsEnsureGoldAnim() {
-        function applyAnim() {
-          var btn = document.getElementById('bgs-ticker-toggle');
-          if (!btn) return;
-          if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-          var current = window.getComputedStyle(btn).animationName;
-          if (!current || current === 'none') {
-            btn.style.animation = 'bgs-gold-pulse 2.4s ease-in-out infinite';
-          }
-        }
-        document.addEventListener('DOMContentLoaded', function () { setTimeout(applyAnim, 800); });
-        setTimeout(applyAnim, 2500);
-      })();
 
       // Run every 600ms — fast enough to catch React re-renders, light enough for production
       setInterval(tick, 600);

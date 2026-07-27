@@ -393,6 +393,26 @@
       }
       #bgs-stock-undo button:hover { color: #f0d47c; }
 
+      /* Rename field: looks like the label it replaces until you focus it. */
+      .bgs-hp-rename {
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 2px;
+        color: inherit;
+        font: inherit;
+        padding: 0.2rem 0.35rem;
+        min-width: 0;
+        width: 100%;
+        cursor: text;
+      }
+      .bgs-hp-rename:hover { border-color: rgba(212,175,55,0.28); }
+      .bgs-hp-rename:focus {
+        outline: none;
+        border-color: rgba(212,175,55,0.7);
+        background: rgba(212,175,55,0.07);
+        color: #fff;
+      }
+
       /* ── Hero Products Admin Panel ── */
       #bgs-hero-panel {
         margin-top: 1.5rem;
@@ -1022,6 +1042,208 @@
         > div[class*="bottom-14"][class*="left-10"] { display: none !important; }
       section.relative.w-full.overflow-hidden.bg-black
         > div[class*="sm:bottom-24"] > p { display: none !important; }
+
+      /* ══ EDITORIAL COLLECTION ══
+         The nine-object collage that replaces the old product-card grid. Tiles
+         are placed as percentages of a fixed-ratio stage, so the composition
+         holds its proportions at every width instead of reflowing into
+         something the layout was never drawn for.
+
+         Phones get a different design rather than a squeezed one: the collage
+         becomes a two-column mosaic with the headline above it. At 375px a
+         nine-tile collage would put each piece at ~90px with unreadable
+         captions, so it is not worth preserving. */
+      #bgs-editorial {
+        background: #080808;
+        padding: clamp(3rem, 7vw, 6rem) clamp(1rem, 4vw, 3.5rem);
+        opacity: 0;
+        transition: opacity 0.8s ease;
+      }
+      #bgs-editorial.bge-in { opacity: 1; }
+
+      .bge-stage {
+        position: relative;
+        max-width: 1500px;
+        margin: 0 auto;
+        aspect-ratio: 1.55;      /* the drawn proportion of the composition */
+      }
+
+      .bge-eyebrow {
+        position: absolute;
+        top: -1.9rem; right: 0;
+        font-size: 0.56rem;
+        letter-spacing: 0.34em;
+        text-transform: uppercase;
+        color: #9f8a48;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        white-space: nowrap;
+      }
+
+      .bge-tile { position: absolute; margin: 0; overflow: visible; }
+      .bge-tile .bge-frame {
+        position: absolute; inset: 0;
+        overflow: hidden;
+        background: #131313;
+        display: block;
+      }
+      .bge-tile img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+        filter: saturate(0.94) brightness(0.95);
+        transition: transform 0.9s cubic-bezier(0.16,1,0.3,1), filter 0.5s ease;
+      }
+      .bge-tile:hover img { transform: scale(1.05); filter: saturate(1) brightness(1.05); }
+
+      .bge-cap {
+        position: absolute;
+        display: flex;
+        gap: 0.55rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        font-size: clamp(0.42rem, 0.62vw, 0.52rem);
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: rgba(226,214,184,0.6);
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      .bge-cap .bge-num { color: #c9a233; letter-spacing: 0.16em; }
+      .bge-cap-h { left: 0; top: calc(100% + 0.5rem); align-items: baseline; }
+      .bge-cap-v {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        top: 0; right: calc(100% + 0.5rem);
+        align-items: center;
+      }
+      .bge-cap-v.bge-cap-right { right: auto; left: calc(100% + 0.5rem); }
+
+      /* Nine placements, in percentages of the stage */
+      .bge-t1 { left: 2%;  top: 1%;  width: 22%;   height: 40%; }
+      .bge-t2 { left: 29%; top: 7%;  width: 18%;   height: 28%; }
+      .bge-t3 { left: 56%; top: 7%;  width: 18.5%; height: 26%; }
+      .bge-t4 { left: 77%; top: 7%;  width: 16.5%; height: 32%; }
+      .bge-t5 { left: 2%;  top: 44%; width: 18%;   height: 23%; }
+      .bge-t6 { left: 79%; top: 42%; width: 19%;   height: 24%; }
+      .bge-t7 { left: 8%;  top: 68%; width: 16%;   height: 27%; }
+      .bge-t8 { left: 27%; top: 70%; width: 38%;   height: 21%; }
+      .bge-t9 { left: 67%; top: 68%; width: 24%;   height: 22%; }
+
+      .bge-headline {
+        position: absolute;
+        left: 0; right: 0; top: 30%;
+        z-index: 3;
+        text-align: center;
+        margin: 0;
+        pointer-events: none;
+        font-family: 'Playfair Display', Georgia, serif;
+        font-weight: 400;
+        font-style: italic;
+        color: #f4efe3;
+        line-height: 0.86;
+        font-size: clamp(2rem, 7.6vw, 7.6rem);
+        text-shadow: 0 6px 40px rgba(0,0,0,0.55);
+      }
+      .bge-headline span { display: block; }
+
+      .bge-cta {
+        position: absolute;
+        right: 0; bottom: 0;
+        z-index: 4;
+        display: inline-flex;
+        align-items: center;
+        gap: 1.1rem;
+        padding: 0.85rem 1.6rem;
+        border: 1px solid rgba(212,175,55,0.42);
+        background: rgba(8,8,8,0.45);
+        color: #e6d9ad;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        font-size: 0.6rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+      }
+      .bge-cta:hover { background: rgba(212,175,55,0.14); color: #fff; border-color: rgba(212,175,55,0.75); }
+      .bge-cta .bge-arrow { transition: transform 0.25s ease; }
+      .bge-cta:hover .bge-arrow { transform: translateX(5px); }
+
+      /* ── Tablet: same collage, captions dropped where they'd collide ── */
+      @media (max-width: 1024px) {
+        .bge-cap { font-size: 0.42rem; letter-spacing: 0.18em; }
+        .bge-cap-v { display: none; }        /* rotated text needs room this width can't spare */
+      }
+
+      /* ── Phones: a mosaic, not a miniature collage ── */
+      @media (max-width: 760px) {
+        #bgs-editorial { padding: 2.75rem 1.1rem 3rem; }
+        /* Flex ordering, because the collage's DOM order puts the headline
+           after the tiles — right for the overlay, wrong for a stacked read. */
+        .bge-stage {
+          aspect-ratio: auto;
+          display: flex;
+          flex-direction: column;
+        }
+        .bge-eyebrow   { order: 1; }
+        .bge-headline  { order: 2; }
+        .bge-grid-wrap { order: 3; }
+        .bge-cta       { order: 4; }
+        .bge-eyebrow {
+          position: static;
+          display: block;
+          text-align: left;
+          margin-bottom: 0.8rem;
+          font-size: 0.5rem;
+        }
+        .bge-headline {
+          position: static;
+          text-align: left;
+          font-size: clamp(2.1rem, 12.5vw, 3.2rem);
+          line-height: 0.92;
+          margin: 0 0 1.4rem;
+          text-shadow: none;
+        }
+        .bge-grid-wrap {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 0.55rem;
+        }
+        /* The first tile earns the full width — it is the lead object. */
+        .bge-tile {
+          position: relative;
+          left: auto !important; top: auto !important;
+          width: auto !important; height: auto !important;
+          aspect-ratio: 1 / 1;
+          /* Grid items default to min-width:auto, so a long caption widens its
+             column and pushes the mosaic past the stage. */
+          min-width: 0;
+        }
+        .bge-t1 { grid-column: span 2; aspect-ratio: 16 / 10; }
+        .bge-t8 { grid-column: span 2; aspect-ratio: 16 / 10; }
+        /* Nine into two columns leaves the last tile orphaned; give it the
+           full width so the mosaic closes cleanly. */
+        .bge-t9 { grid-column: span 2; aspect-ratio: 16 / 10; }
+        .bge-cap {
+          position: static;
+          display: flex;
+          writing-mode: horizontal-tb;
+          transform: none;
+          margin-top: 0.4rem;
+          font-size: 0.46rem;
+          letter-spacing: 0.2em;
+          white-space: normal;
+        }
+        .bge-cap-v { display: flex; }
+        .bge-tile .bge-frame { position: relative; inset: auto; width: 100%; aspect-ratio: inherit; }
+        .bge-cta {
+          position: static;
+          display: flex;
+          width: 100%;
+          margin-top: 1.5rem;
+          justify-content: center;
+          padding: 1rem 1.2rem;
+          font-size: 0.58rem;
+        }
+      }
 
       /* ── GOLD RATE BAND ──
          Sits below the box, in the artwork's black margin, spanning the box's
@@ -3352,20 +3574,114 @@
       /* ─────────────────────────────────────────
          HERO PRODUCTS — THE COLLECTION
          ───────────────────────────────────────── */
+      /* The nine pieces the hero collage ships with. Real product photography
+         rather than the stock placeholders this used to hold — and the same
+         pool the admin picks from, so the hero and The Collection stay in step.
+         Nine is the layout's capacity; BGS_HERO_MAX enforces it. */
+      var BGS_HERO_MAX = 9;
       var BGS_SHOWCASE = [
-        {id:'celestial-aria-ring',img:'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=900&h=900&fit=crop&q=85&auto=format',tag:'Signature Ring',name:'Celestial Aria Ring',metal:'18K Yellow Gold',stone:'0.5ct Round Diamond'},
-        {id:'lumina-star-pendant',img:'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=900&h=900&fit=crop&q=85&auto=format',tag:'Pendant',name:'Lumina Star Pendant',metal:'18K Rose Gold',stone:'0.3ct Sapphire'},
-        {id:'aurum-link-bracelet',img:'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=900&h=900&fit=crop&q=85&auto=format',tag:'Bracelet',name:'Aurum Link Bracelet',metal:'18K Yellow Gold',stone:'Diamond Pavé'},
-        {id:'eclipse-drop-earrings',img:'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=900&h=900&fit=crop&q=85&auto=format',tag:'Earrings',name:'Eclipse Drop Earrings',metal:'18K White Gold',stone:'0.4ct Diamonds'},
-        {id:'soleil-chain-necklace',img:'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=900&h=900&fit=crop&q=85&auto=format',tag:'Necklace',name:'Soleil Chain Necklace',metal:'18K Yellow Gold',stone:'Polished Gold'},
-        {id:'reverie-band',img:'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=900&h=900&fit=crop&q=85&auto=format',tag:'Eternity Ring',name:'Reverie Band',metal:'18K Yellow Gold',stone:'Full Diamond Eternity'},
-        {id:'noor-tennis-bracelet',img:'https://images.unsplash.com/photo-1608042314453-ae338d80c427?w=900&h=900&fit=crop&q=85&auto=format',tag:'Tennis Bracelet',name:'Noor Tennis Bracelet',metal:'18K White Gold',stone:'2.1ct Diamonds'},
-        {id:'marquise-aura-ring',img:'https://images.unsplash.com/photo-1586104195538-050b9f74f58e?w=900&h=900&fit=crop&q=85&auto=format',tag:'Marquise Ring',name:'Marquise Aura Ring',metal:'18K Rose Gold',stone:'0.7ct Marquise Diamond'},
-        {id:'luna-hoops',img:'https://images.unsplash.com/photo-1588444837495-c6cfeb53f32d?w=900&h=900&fit=crop&q=85&auto=format',tag:'Hoops',name:'Luna Diamond Hoops',metal:'18K Yellow Gold',stone:'0.25ct Diamonds'},
-        {id:'maison-link-chain',img:'https://images.unsplash.com/photo-1603974372039-adc49044b6bd?w=900&h=900&fit=crop&q=85&auto=format',tag:'Chain',name:'Maison Link Chain',metal:'18K Yellow Gold',stone:'Polished Gold'},
-        {id:'sahara-cuff',img:'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=900&h=900&fit=crop&q=85&auto=format',tag:'Cuff',name:'Sahara Diamond Cuff',metal:'18K Yellow Gold',stone:'0.9ct Diamonds'},
-        {id:'atelier-studs',img:'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=900&h=900&fit=crop&q=85&auto=format',tag:'Studs',name:'Atelier Diamond Studs',metal:'18K White Gold',stone:'1.0ct Diamond Pair'}
+        {id:'ring-solitaire',   img:'/assets/hero/collection/ring-solitaire.webp?v=1',   tag:'Solitaire Ring',  name:'Diamond Solitaire Ring', metal:'White Gold',     stone:'Brilliant-Cut Diamond'},
+        {id:'necklace-22k',     img:'/assets/hero/collection/necklace-22k.webp?v=1',     tag:'22K Necklace',    name:'22K Gold Necklace',      metal:'22K Yellow Gold', stone:''},
+        {id:'earrings-22k',     img:'/assets/hero/collection/earrings-22k.webp?v=1',     tag:'22K Earrings',    name:'22K Gold Earrings',      metal:'22K Yellow Gold', stone:''},
+        {id:'bangle-22k',       img:'/assets/hero/collection/bangle-22k.webp?v=1',       tag:'22K Bangle',      name:'22K Gold Bangle',        metal:'22K Yellow Gold', stone:''},
+        {id:'chain-22k',        img:'/assets/hero/collection/chain-22k.webp?v=1',        tag:'22K Chain',       name:'22K Gold Chain',         metal:'22K Yellow Gold', stone:''},
+        {id:'bracelet-22k',     img:'/assets/hero/collection/bracelet-22k.webp?v=1',     tag:'22K Bracelet',    name:'22K Gold Bracelet',      metal:'22K Yellow Gold', stone:''},
+        {id:'necklace-classic', img:'/assets/hero/collection/necklace-classic.webp?v=1', tag:'Gold Necklace',   name:'Gold Necklace',          metal:'Yellow Gold',     stone:''},
+        {id:'bracelet-classic', img:'/assets/hero/collection/bracelet-classic.webp?v=1', tag:'Gold Bracelet',   name:'Gold Bracelet',          metal:'Yellow Gold',     stone:''},
+        {id:'earrings-hoops',   img:'/assets/hero/collection/earrings-hoops.webp?v=1',   tag:'Hoop Earrings',   name:'Gold Hoop Earrings',     metal:'Yellow Gold',     stone:''}
       ];
+
+      /* ─────────────────────────────────────────
+         EDITORIAL HERO
+         Replaces the box artwork with the nine-object collage. The tiles come
+         from the same admin selection that drives The Collection, so editing
+         one edits both — which is what "the hero editor" is expected to mean.
+         ───────────────────────────────────────── */
+      function bgsHeroTiles() {
+        var sel = getHeroSelection();
+        var list = sel.length ? sel : BGS_SHOWCASE;
+        return list.slice(0, BGS_HERO_MAX);
+      }
+
+      /* Which tiles wear a vertical caption, matching the drawn layout: the
+         outer columns read down their outside edge, the rest read underneath. */
+      var BGS_TILE_CAPS = ['v', 'v', 'v', 'h', 'v', 'vr', 'h', 'h', 'h'];
+
+      function bgsRenderEditorialTiles() {
+        var wrap = document.getElementById('bgs-editorial');
+        if (!wrap) return;
+        var grid = wrap.querySelector('.bge-grid-wrap');
+        if (!grid) return;
+
+        var tiles = bgsHeroTiles();
+        var sig = tiles.map(function (t) { return t.id + '|' + t.name + '|' + t.img; }).join('~');
+        if (grid.getAttribute('data-sig') === sig) return;   // nothing changed
+        grid.setAttribute('data-sig', sig);
+
+        grid.innerHTML = tiles.map(function (t, i) {
+          var n = i + 1;
+          var kind = BGS_TILE_CAPS[i] || 'h';
+          var capCls = kind === 'h' ? 'bge-cap bge-cap-h'
+                     : kind === 'vr' ? 'bge-cap bge-cap-v bge-cap-right'
+                     : 'bge-cap bge-cap-v';
+          var label = t.tag || t.name || '';
+          return '<figure class="bge-tile bge-t' + n + '">' +
+                   '<span class="' + capCls + '">' +
+                     '<span class="bge-num">' + (n < 10 ? '0' + n : n) + '</span>' +
+                     '<span class="bge-label">' + escHtml(label) + '</span>' +
+                   '</span>' +
+                   '<span class="bge-frame">' +
+                     /* No lazy loading: all nine sit above the fold, so
+                        deferring them only delays the hero. */
+                     /* eager, explicitly: all nine are above the fold, and the
+                        global perf pass below would otherwise lazy-load them. */
+                     '<img src="' + escHtml(t.img) + '" alt="' + escHtml(t.name || label) +
+                       '" decoding="async" loading="eager" fetchpriority="high">' +
+                   '</span>' +
+                 '</figure>';
+        }).join('');
+      }
+
+      function bgsBuildEditorialHero() {
+        var sec = document.getElementById('collection');
+        if (!sec) return false;
+
+        if (document.getElementById('bgs-editorial')) { bgsRenderEditorialTiles(); return true; }
+
+        /* Everything React renders in this section — the "Curated exclusively"
+           header, the product-card grid and its Browse More — is replaced. The
+           collage carries its own headline, so keeping the old one would say the
+           same thing twice. The <section> itself stays: #collection is the
+           anchor the nav and the CTA scroll to. */
+        sec.innerHTML = '';
+        sec.style.setProperty('padding', '0', 'important');
+
+        var wrap = document.createElement('div');
+        wrap.id = 'bgs-editorial';
+        wrap.innerHTML =
+          '<div class="bge-stage">' +
+            '<span class="bge-eyebrow">Nine Objects &middot; One Story</span>' +
+            '<div class="bge-grid-wrap"></div>' +
+            '<h1 class="bge-headline"><span>Layers hold</span><span>tales of gold</span></h1>' +
+            '<button class="bge-cta" type="button">' +
+              '<span>Contact Us</span><span class="bge-arrow">&rarr;</span>' +
+            '</button>' +
+          '</div>';
+        sec.appendChild(wrap);
+
+        wrap.querySelector('.bge-cta').addEventListener('click', function () {
+          var f = document.getElementById('footer');
+          if (f) f.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        bgsRenderEditorialTiles();
+        var reveal = function () { wrap.classList.add('bge-in'); };
+        requestAnimationFrame(function () { requestAnimationFrame(reveal); });
+        setTimeout(reveal, 400);
+        return true;
+      }
+
+      window.addEventListener('bgs_hero_updated', bgsRenderEditorialTiles);
 
       function getHeroPool() {
         var pool = BGS_SHOWCASE.slice();
@@ -3421,14 +3737,23 @@
               return '<div class="bgs-hp-selected-row">' +
                 '<span class="bgs-hp-sel-num">' + (i+1) + '</span>' +
                 '<img class="bgs-hp-sel-img" src="' + escHtml(p.img) + '" alt="">' +
-                '<span class="bgs-hp-sel-name">' + escHtml(p.name) + '</span>' +
+                '<input class="bgs-hp-sel-name bgs-hp-rename" type="text" value="' + escHtml(p.name) + '"' +
+                  ' data-id="' + escHtml(p.id) + '" title="Rename — shown under this tile in the hero"' +
+                  ' onchange="bgsHeroRename(this.dataset.id, this.value)"' +
+                  ' onkeydown="if(event.key===\'Enter\'){this.blur();}">' +
                 '<div class="bgs-hp-sel-btns">' + upBtn + downBtn +
                   '<button class="bgs-hp-remove" onclick="bgsHeroRemove(\'' + escHtml(p.id) + '\')">✕</button>' +
                 '</div>' +
               '</div>';
             }).join('');
 
-        var availHtml = available.length === 0
+        /* Say the hero is full before a click can fail, rather than only in the
+           alert afterwards. */
+        var full = selected.length >= BGS_HERO_MAX;
+        var availHtml = full
+          ? '<p style="color:#e0a33c;font-size:0.72rem;line-height:1.6;">' +
+              'The hero is full at ' + BGS_HERO_MAX + ' pieces. Remove one above to free a place.</p>'
+          : available.length === 0
           ? '<p style="color:#444;font-size:0.7rem;">All products added.</p>'
           : available.map(function(p) {
               return '<div class="bgs-hp-card" onclick="bgsHeroAdd(\'' + escHtml(p.id) + '\')">' +
@@ -3439,8 +3764,10 @@
 
         panel.innerHTML =
           '<p class="bgs-hp-title">Hero Products — The Collection</p>' +
-          '<p class="bgs-hp-sub">Choose which pieces appear in The Collection on the homepage. Reorder with ↑↓. Leave empty to show defaults.</p>' +
-          '<p class="bgs-hp-section-label">Currently featured (' + selected.length + ')</p>' +
+          '<p class="bgs-hp-sub">The nine pieces in the homepage hero, in order. Position 1 is the large tile top-left. ' +
+            'Reorder with ↑↓, and click a name to rename it — the name is what shows under its tile. ' +
+            'Leave empty to show the defaults.</p>' +
+          '<p class="bgs-hp-section-label">Currently featured (' + selected.length + ' of ' + BGS_HERO_MAX + ')</p>' +
           selHtml +
           (selected.length > 0 ? '<button id="bgs-hp-reset" onclick="bgsHeroClear()">Reset to defaults</button><br><br>' : '') +
           '<p class="bgs-hp-section-label" style="margin-top:' + (selected.length ? '1.5rem' : '0') + '">Add to collection</p>' +
@@ -3465,6 +3792,14 @@
         if (!item) return;
         var sel = getHeroSelection();
         if (sel.some(function(p){ return p.id === id; })) return;
+        /* The collage has nine placements and no tenth — say so plainly rather
+           than accepting a piece that would never appear. */
+        if (sel.length >= BGS_HERO_MAX) {
+          alert('The hero section holds ' + BGS_HERO_MAX + ' pieces.\n\n' +
+                'Remove one from "Currently featured" before adding ' +
+                (item.name || 'another piece') + '.');
+          return;
+        }
         sel.push(item);
         saveHeroSelection(sel);
         renderHeroPanel();
@@ -3489,6 +3824,29 @@
 
       window.bgsHeroClear = function() {
         saveHeroSelection([]);
+        renderHeroPanel();
+      };
+
+      /* Rename a featured piece. The caption under its tile is the tag, so both
+         it and the display name move together — otherwise the hero would keep
+         showing the old wording after a rename. Editing the selection only, so
+         the underlying product keeps its own name elsewhere. */
+      window.bgsHeroRename = function(id, value) {
+        var name = String(value == null ? '' : value).trim();
+        if (!name) { renderHeroPanel(); return; }
+        var sel = getHeroSelection();
+        var hit = false;
+        for (var i = 0; i < sel.length; i++) {
+          if (sel[i].id === id) {
+            if (sel[i].name === name) return;   // nothing to do; don't churn sync
+            sel[i].name = name;
+            sel[i].tag  = name;
+            hit = true;
+            break;
+          }
+        }
+        if (!hit) return;
+        saveHeroSelection(sel);
         renderHeroPanel();
       };
 
@@ -3862,10 +4220,13 @@
           heroAdminInjected = false;
         }
 
+        // Editorial hero collage — also re-hides React's hero on re-render
+        bgsBuildEditorialHero();
+
         // Apply hero products on homepage collection
         applyHeroProducts();
 
-        // Gold rate bar inside the box's bottom panel
+        // Gold rate bar, ruled off the bottom of the collage
         injectHeroRateBar();
         bgsPositionHeroChrome();
 
@@ -3906,7 +4267,9 @@
 
     })();
     </script>
-    <!-- PERF: async-decode + lazy-load images (hero is a CSS background, unaffected) -->
+    <!-- PERF: async-decode + lazy-load images. Anything already carrying a
+         loading attribute is left alone — the editorial hero tiles set
+         loading="eager" for exactly that reason. -->
     <script id="bgs-img-perf">
     (function () {
       function hint(img) {

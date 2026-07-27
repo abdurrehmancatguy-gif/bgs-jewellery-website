@@ -1024,10 +1024,12 @@
         > div[class*="sm:bottom-24"] > p { display: none !important; }
 
       /* ── GOLD RATE BAND ──
-         Sits inside the box, along its bottom panel. left/right/bottom are
-         set from JS (bgsPositionHeroChrome) because the artwork is bg-cover:
-         the frame's on-screen position depends on the viewport ratio, so a
-         fixed inset would drift off the box. */
+         Sits below the box, in the artwork's black margin, spanning the box's
+         full width. left/right/top are set from JS (bgsPositionHeroChrome)
+         because the artwork is bg-cover: the frame's on-screen position
+         depends on the viewport ratio, so a fixed inset would drift off it.
+         It stays transparent until positioned, so nothing flashes at the
+         fallback offsets below. */
       #bgs-hero-rates {
         position: absolute;
         bottom: 2.5rem;
@@ -2389,28 +2391,34 @@
         var offY = (vh - F.ih * scale) / 2;
         var pad = 26 * scale;                                 // breathing room inside the frame
 
-        var left   = F.left * scale + offX + pad;
-        var right  = vw - (F.right * scale + offX) + pad;
-        var bottom = vh - (F.bottom * scale + offY) + pad;
+        var frameBottomY = F.bottom * scale + offY;           // box's lower frame line
+        var left   = F.left * scale + offX;                   // flush with the frame edges
+        var right  = vw - (F.right * scale + offX);
+        var insetRight = right + pad;                         // inset version, for the CTAs
 
-        // Clamp so a very tall/narrow viewport can't push it off-screen
+        /* Rate band: below the box in the artwork's black margin, spanning the
+           box's full width. Positioned from the top so it hangs off the frame
+           line; pinned to the hero's floor on ratios where the crop leaves no
+           margin, which is the only case it could otherwise run off-screen. */
         var bar = document.getElementById('bgs-hero-rates');
         if (bar) {
+          var barH = bar.offsetHeight || 54;
           bar.style.left   = Math.max(8, left) + 'px';
           bar.style.right  = Math.max(8, right) + 'px';
-          bar.style.bottom = Math.max(8, bottom) + 'px';
+          bar.style.bottom = 'auto';
+          bar.style.top    = Math.max(8, Math.min(frameBottomY + 14 * scale,
+                                                  vh - barH - 8)) + 'px';
         }
 
-        /* CTA group: sits off the box's right edge rather than the viewport's,
-           and rides on top of the band so the two can never collide. The base
-           rule uses !important to beat Tailwind's classes, so these have to be
-           set with priority to win. */
+        /* CTA group: off the box's right edge rather than the viewport's. With
+           the band gone from inside the box, these drop to just above the frame
+           line instead of riding on top of it. The base rule uses !important to
+           beat Tailwind's classes, so these have to be set with priority. */
         var cta = document.querySelector(BGS_HERO_CTA_SEL);
         if (cta) {
-          var barH = bar ? bar.offsetHeight : 54 * scale;
-          cta.style.setProperty('right', Math.max(8, right + 48 * scale) + 'px', 'important');
+          cta.style.setProperty('right', Math.max(8, insetRight + 48 * scale) + 'px', 'important');
           cta.style.setProperty('bottom',
-            Math.max(8, bottom + barH + 30 * scale) + 'px', 'important');
+            Math.max(8, vh - frameBottomY + pad) + 'px', 'important');
         }
 
         /* Headline: Tailwind pins it at a fixed 14% of the hero, but the
@@ -2461,6 +2469,14 @@
         hero.appendChild(bar);
         bgsPositionHeroChrome();
 
+        /* The band's own height feeds the clamp that keeps it on screen, and
+           that height moves as rows fill in and webfonts swap. Watch it rather
+           than guessing when it has settled. */
+        if (window.ResizeObserver) {
+          var ro = new ResizeObserver(function () { bgsPositionHeroChrome(); });
+          ro.observe(bar);
+        }
+
         if (_bgsLastRates) renderHeroRateBar(_bgsLastRates);
         // Fade in on the next frame so the transition actually runs.
         // rAF is throttled to zero in a background tab, so a timer backs it up.
@@ -2490,6 +2506,11 @@
             '</div>';
         }
         cells.innerHTML = html;
+        /* The band's height isn't final until its rows exist, and the vertical
+           clamp is computed from that height — position after filling it, or
+           the first placement uses an empty bar's height and hangs off the
+           bottom of the hero. */
+        bgsPositionHeroChrome();
       }
 
       // Listen for admin gold updates

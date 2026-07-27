@@ -2672,6 +2672,58 @@
       }
 
       /* ─────────────────────────────────────────
+         INVENTORY VISIBILITY
+
+         The inventory page, its data and its filters are all still here and
+         #/inventory still loads if you go there directly — this only takes
+         away the ways in from the public site, until there are real product
+         photos to show. Flipping this back to true restores the two nav
+         dropdowns and turns the CTAs back into "Browse More"; nothing else
+         has to be undone.
+         ───────────────────────────────────────── */
+      var BGS_INVENTORY_VISIBLE = false;
+
+      function bgsGoToContact() {
+        var f = document.getElementById('footer');
+        if (f) f.scrollIntoView({ behavior: 'smooth' });
+        else window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }
+
+      /* Both "Browse More" buttons (hero and the foot of the collection
+         section) call React's inventory router. Relabel them and swallow the
+         click in the capture phase — React listens on the root, so stopping
+         propagation at the target keeps its handler from ever running. */
+      function bgsRetargetCTAs() {
+        if (BGS_INVENTORY_VISIBLE) return;
+        var btns = document.querySelectorAll('#root button');
+        for (var i = 0; i < btns.length; i++) {
+          var b = btns[i];
+          if ((b.textContent || '').trim() !== 'Browse More') continue;
+          b.textContent = 'Contact Us';          // re-applied if React re-renders
+          if (b.dataset.bgsCta === '1') continue;
+          b.dataset.bgsCta = '1';
+          b.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            bgsGoToContact();
+          }, true);
+        }
+      }
+
+      /* The 600ms tick catches re-renders, but on its own it can let a frame
+         of "Browse More" show through. Watching the root closes that gap. */
+      (function () {
+        var root = document.getElementById('root');
+        if (!root || !window.MutationObserver) return;
+        var queued = false;
+        new MutationObserver(function () {
+          if (queued) return;
+          queued = true;
+          requestAnimationFrame(function () { queued = false; bgsRetargetCTAs(); });
+        }).observe(root, { childList: true, subtree: true });
+      })();
+
+      /* ─────────────────────────────────────────
          NAVIGATION DROPDOWNS
          ───────────────────────────────────────── */
       var LAB_ITEMS = [
@@ -2889,6 +2941,9 @@
       };
 
       function buildNavDropdowns() {
+        // Both dropdowns exist only to filter the inventory, so they go with it.
+        if (!BGS_INVENTORY_VISIBLE) return true;
+
         // Find "The Collection" in the home page nav
         var allBtns = document.querySelectorAll('nav button, nav a');
         var collBtn = null;
@@ -3639,10 +3694,15 @@
           navInjected = !!buildNavDropdowns();
         }
 
-        // Re-check nav injection if React re-rendered and removed our elements
-        if (navInjected && !document.getElementById('bgs-collection-nav')) {
+        // Re-check nav injection if React re-rendered and removed our elements.
+        // Skipped while the inventory is hidden — there is no element to find,
+        // so this would otherwise re-arm the build on every tick forever.
+        if (BGS_INVENTORY_VISIBLE && navInjected && !document.getElementById('bgs-collection-nav')) {
           navInjected = false;
         }
+
+        // Keep the CTAs pointing at contact rather than the hidden inventory
+        bgsRetargetCTAs();
 
         // Footer About Us
         if (!footerInjected) {

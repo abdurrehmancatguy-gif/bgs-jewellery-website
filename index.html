@@ -5,7 +5,7 @@
     <link rel="icon" href="/logo.png?v=2" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BGS Jewellery</title>
-    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=5"></script>
+    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=6"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-d0osuhxy.css?v=2">
 
     <!-- ═══════════════════════════════════════════════════════════════
@@ -368,6 +368,70 @@
         color: #4ade80;
         text-align: center;
         display: none;
+      }
+
+      /* ── Delete All Stock ──
+         Red rather than gold: this is the one control in the admin that
+         destroys data, and it should not look like the save buttons. */
+      #bgs-stock-danger {
+        margin-top: 2rem;
+        border: 1px solid rgba(220,60,60,0.28);
+        border-radius: 3px;
+        padding: 1.1rem 1.2rem;
+        background: rgba(120,20,20,0.07);
+      }
+      #bgs-stock-danger .bgs-sd-title {
+        font-size: 0.58rem;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: #e06a6a;
+        margin: 0 0 0.5rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      #bgs-stock-danger .bgs-sd-note {
+        font-size: 0.78rem;
+        color: #777;
+        line-height: 1.6;
+        margin: 0 0 0.9rem;
+      }
+      #bgs-stock-danger .bgs-sd-btn {
+        background: none;
+        border: 1px solid rgba(220,60,60,0.5);
+        color: #e06a6a;
+        padding: 0.55rem 1.1rem;
+        font-size: 0.58rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        transition: background 0.15s, color 0.15s;
+      }
+      #bgs-stock-danger .bgs-sd-btn:hover {
+        background: rgba(220,60,60,0.14);
+        color: #ff8b8b;
+      }
+      #bgs-stock-danger .bgs-sd-btn[disabled] {
+        opacity: 0.4;
+        cursor: default;
+        background: none;
+        color: #e06a6a;
+      }
+      #bgs-stock-danger .bgs-sd-msg {
+        font-size: 0.76rem;
+        color: #888;
+        margin: 0.8rem 0 0;
+        display: none;
+      }
+      #bgs-stock-danger .bgs-sd-undo {
+        background: none;
+        border: none;
+        border-bottom: 1px solid rgba(212,175,55,0.5);
+        color: #d4af37;
+        cursor: pointer;
+        font: inherit;
+        padding: 0 0 1px;
+        margin-left: 0.5rem;
       }
 
       /* ── Hero Products Admin Panel ── */
@@ -3107,6 +3171,106 @@
       }
 
       /* ─────────────────────────────────────────
+         ADMIN — DELETE ALL STOCK
+
+         Wiping the inventory syncs to every device the moment it happens, so
+         this takes a typed confirmation rather than a single click, and keeps
+         a copy first. The copy is deliberately NOT an fg_* key: those all sync,
+         and a snapshot that travelled with the wipe would be no safety net at
+         all — and would double the payload. It stays on this browser, which is
+         where the mistake would be made.
+         ───────────────────────────────────────── */
+      var BGS_STOCK_BACKUP_KEY = 'bgs_stock_backup';
+
+      function bgsReadInventory() {
+        try {
+          var raw = _origGetItem.call(localStorage, 'fg_inventory');
+          var arr = raw ? JSON.parse(raw) : [];
+          return Array.isArray(arr) ? arr : [];
+        } catch (e) { return []; }
+      }
+
+      function injectStockDangerZone() {
+        if (document.getElementById('bgs-stock-danger')) return true;
+
+        // Anchor on the "Upload New Stock" heading — the stock screen's own title
+        var heads = document.querySelectorAll('h1,h2,h3');
+        var head = null;
+        for (var i = 0; i < heads.length; i++) {
+          if (heads[i].textContent.trim() === 'Upload New Stock') { head = heads[i]; break; }
+        }
+        if (!head) return false;
+        var section = head.parentElement;
+        if (!section) return false;
+
+        var panel = document.createElement('div');
+        panel.id = 'bgs-stock-danger';
+        panel.innerHTML =
+          '<p class="bgs-sd-title">Danger Zone</p>' +
+          '<p class="bgs-sd-note">Removes every product from the live site at once. ' +
+          'This syncs to all devices immediately. Export your stock first if you might want it back.</p>' +
+          '<button class="bgs-sd-btn" id="bgs-sd-btn">Delete All Stock</button>' +
+          '<p class="bgs-sd-msg" id="bgs-sd-msg"></p>';
+        section.appendChild(panel);
+
+        var btn = panel.querySelector('#bgs-sd-btn');
+        var msg = panel.querySelector('#bgs-sd-msg');
+
+        function refresh() {
+          var n = bgsReadInventory().length;
+          btn.disabled = n === 0;
+          btn.textContent = n === 0 ? 'No Stock To Delete' : 'Delete All Stock (' + n + ')';
+        }
+        refresh();
+        window.addEventListener('fg_inventory_updated', refresh);
+
+        btn.addEventListener('click', function () {
+          var items = bgsReadInventory();
+          if (!items.length) return;
+
+          var typed = window.prompt(
+            'This deletes all ' + items.length + ' products from the live site and every ' +
+            'device, straight away.\n\nType DELETE to confirm.');
+          if (typed === null) return;
+          if (typed.trim().toUpperCase() !== 'DELETE') {
+            msg.style.display = 'block';
+            msg.textContent = 'Cancelled — nothing was deleted.';
+            return;
+          }
+
+          // Local-only snapshot, written past the sync patch so it never leaves
+          // this browser.
+          try {
+            _origSetItem.call(localStorage, BGS_STOCK_BACKUP_KEY,
+              JSON.stringify({ ts: Date.now(), items: items }));
+          } catch (e) { /* quota — proceed, the export is the real backup */ }
+
+          localStorage.setItem('fg_inventory', '[]');
+          window.dispatchEvent(new Event('fg_inventory_updated'));
+
+          msg.style.display = 'block';
+          msg.innerHTML = 'Deleted ' + items.length + ' products. ' +
+            '<button class="bgs-sd-undo" id="bgs-sd-undo">Undo on this device</button>';
+          var undo = msg.querySelector('#bgs-sd-undo');
+          undo.addEventListener('click', function () {
+            var snap;
+            try { snap = JSON.parse(_origGetItem.call(localStorage, BGS_STOCK_BACKUP_KEY)); }
+            catch (e) { snap = null; }
+            if (!snap || !snap.items || !snap.items.length) {
+              msg.textContent = 'No local copy to restore from.';
+              return;
+            }
+            localStorage.setItem('fg_inventory', JSON.stringify(snap.items));
+            window.dispatchEvent(new Event('fg_inventory_updated'));
+            msg.textContent = 'Restored ' + snap.items.length + ' products.';
+          });
+          refresh();
+        });
+
+        return true;
+      }
+
+      /* ─────────────────────────────────────────
          ADMIN PANEL — ALL KARAT INPUTS
          ───────────────────────────────────────── */
       function injectAdminGoldPanel() {
@@ -3530,6 +3694,7 @@
       var navInjected = false;
       var footerInjected = false;
       var adminInjected = false;
+      var stockDangerInjected = false;
       var heroAdminInjected = false;
       var marqueeAdminInjected = false;
       var goldBuilt = false;
@@ -3720,6 +3885,14 @@
           adminInjected = false;
         }
 
+        // Delete-all-stock control on the stock screen
+        if (!stockDangerInjected) {
+          stockDangerInjected = injectStockDangerZone();
+        }
+        if (stockDangerInjected && !document.getElementById('bgs-stock-danger')) {
+          stockDangerInjected = false;
+        }
+
         // Hero products admin panel
         if (!heroAdminInjected) {
           heroAdminInjected = injectAdminHeroPanel();
@@ -3759,6 +3932,7 @@
         filterInjected = false;
         footerInjected = false;
         adminInjected = false;
+        stockDangerInjected = false;
         heroAdminInjected = false;
         marqueeAdminInjected = false;
         reactBoxHidden = false;

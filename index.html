@@ -5,7 +5,7 @@
     <link rel="icon" href="/logo.png?v=2" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BGS Jewellery</title>
-    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=6"></script>
+    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=7"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-d0osuhxy.css?v=2">
 
     <!-- ═══════════════════════════════════════════════════════════════
@@ -370,60 +370,19 @@
         display: none;
       }
 
-      /* ── Delete All Stock ──
-         Red rather than gold: this is the one control in the admin that
-         destroys data, and it should not look like the save buttons. */
-      #bgs-stock-danger {
-        margin-top: 2rem;
-        border: 1px solid rgba(220,60,60,0.28);
-        border-radius: 3px;
-        padding: 1.1rem 1.2rem;
-        background: rgba(120,20,20,0.07);
-      }
-      #bgs-stock-danger .bgs-sd-title {
-        font-size: 0.58rem;
-        letter-spacing: 0.28em;
-        text-transform: uppercase;
-        color: #e06a6a;
-        margin: 0 0 0.5rem;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-      }
-      #bgs-stock-danger .bgs-sd-note {
-        font-size: 0.78rem;
-        color: #777;
-        line-height: 1.6;
-        margin: 0 0 0.9rem;
-      }
-      #bgs-stock-danger .bgs-sd-btn {
-        background: none;
-        border: 1px solid rgba(220,60,60,0.5);
-        color: #e06a6a;
-        padding: 0.55rem 1.1rem;
-        font-size: 0.58rem;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        font-weight: 700;
-        cursor: pointer;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-        transition: background 0.15s, color 0.15s;
-      }
-      #bgs-stock-danger .bgs-sd-btn:hover {
-        background: rgba(220,60,60,0.14);
-        color: #ff8b8b;
-      }
-      #bgs-stock-danger .bgs-sd-btn[disabled] {
-        opacity: 0.4;
-        cursor: default;
-        background: none;
-        color: #e06a6a;
-      }
-      #bgs-stock-danger .bgs-sd-msg {
-        font-size: 0.76rem;
+      /* ── Undo for Delete All Stock ──
+         Only rendered when stock is empty and a local copy exists, so it is
+         invisible in normal use. */
+      #bgs-stock-undo {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-left: 0.6rem;
+        font-size: 0.72rem;
         color: #888;
-        margin: 0.8rem 0 0;
-        display: none;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
       }
-      #bgs-stock-danger .bgs-sd-undo {
+      #bgs-stock-undo button {
         background: none;
         border: none;
         border-bottom: 1px solid rgba(212,175,55,0.5);
@@ -431,8 +390,8 @@
         cursor: pointer;
         font: inherit;
         padding: 0 0 1px;
-        margin-left: 0.5rem;
       }
+      #bgs-stock-undo button:hover { color: #f0d47c; }
 
       /* ── Hero Products Admin Panel ── */
       #bgs-hero-panel {
@@ -3173,12 +3132,13 @@
       /* ─────────────────────────────────────────
          ADMIN — DELETE ALL STOCK
 
-         Wiping the inventory syncs to every device the moment it happens, so
-         this takes a typed confirmation rather than a single click, and keeps
-         a copy first. The copy is deliberately NOT an fg_* key: those all sync,
-         and a snapshot that travelled with the wipe would be no safety net at
-         all — and would double the payload. It stays on this browser, which is
-         where the mistake would be made.
+         The admin's own button used to reset the inventory back to the 24 demo
+         products; it now empties it instead. The confirmation lives here rather
+         than in the bundle so it can be read and changed.
+
+         Note it writes "[]" and never removes fg_inventory: the app's reader
+         falls back to the demo products when the key is absent, so removing it
+         would repopulate the shop instead of clearing it.
          ───────────────────────────────────────── */
       var BGS_STOCK_BACKUP_KEY = 'bgs_stock_backup';
 
@@ -3190,84 +3150,70 @@
         } catch (e) { return []; }
       }
 
-      function injectStockDangerZone() {
-        if (document.getElementById('bgs-stock-danger')) return true;
-
-        // Anchor on the "Upload New Stock" heading — the stock screen's own title
-        var heads = document.querySelectorAll('h1,h2,h3');
-        var head = null;
-        for (var i = 0; i < heads.length; i++) {
-          if (heads[i].textContent.trim() === 'Upload New Stock') { head = heads[i]; break; }
+      /* Called by the admin button before it clears React's state. Returning
+         false leaves everything untouched. */
+      window.bgsConfirmDeleteAllStock = function (items) {
+        var list = (items && items.length) ? items : bgsReadInventory();
+        if (!list.length) {
+          alert('There is no stock to delete.');
+          return false;
         }
-        if (!head) return false;
-        var section = head.parentElement;
-        if (!section) return false;
+        var typed = window.prompt(
+          'This deletes all ' + list.length + ' products from the live site and ' +
+          'every device, straight away.\n\n' +
+          'A copy is kept on this browser only, so you can undo it here — but not ' +
+          'from another device.\n\nType DELETE to confirm.');
+        if (typed === null || typed.trim().toUpperCase() !== 'DELETE') return false;
 
-        var panel = document.createElement('div');
-        panel.id = 'bgs-stock-danger';
-        panel.innerHTML =
-          '<p class="bgs-sd-title">Danger Zone</p>' +
-          '<p class="bgs-sd-note">Removes every product from the live site at once. ' +
-          'This syncs to all devices immediately. Export your stock first if you might want it back.</p>' +
-          '<button class="bgs-sd-btn" id="bgs-sd-btn">Delete All Stock</button>' +
-          '<p class="bgs-sd-msg" id="bgs-sd-msg"></p>';
-        section.appendChild(panel);
-
-        var btn = panel.querySelector('#bgs-sd-btn');
-        var msg = panel.querySelector('#bgs-sd-msg');
-
-        function refresh() {
-          var n = bgsReadInventory().length;
-          btn.disabled = n === 0;
-          btn.textContent = n === 0 ? 'No Stock To Delete' : 'Delete All Stock (' + n + ')';
-        }
-        refresh();
-        window.addEventListener('fg_inventory_updated', refresh);
-
-        btn.addEventListener('click', function () {
-          var items = bgsReadInventory();
-          if (!items.length) return;
-
-          var typed = window.prompt(
-            'This deletes all ' + items.length + ' products from the live site and every ' +
-            'device, straight away.\n\nType DELETE to confirm.');
-          if (typed === null) return;
-          if (typed.trim().toUpperCase() !== 'DELETE') {
-            msg.style.display = 'block';
-            msg.textContent = 'Cancelled — nothing was deleted.';
-            return;
-          }
-
-          // Local-only snapshot, written past the sync patch so it never leaves
-          // this browser.
-          try {
-            _origSetItem.call(localStorage, BGS_STOCK_BACKUP_KEY,
-              JSON.stringify({ ts: Date.now(), items: items }));
-          } catch (e) { /* quota — proceed, the export is the real backup */ }
-
-          localStorage.setItem('fg_inventory', '[]');
-          window.dispatchEvent(new Event('fg_inventory_updated'));
-
-          msg.style.display = 'block';
-          msg.innerHTML = 'Deleted ' + items.length + ' products. ' +
-            '<button class="bgs-sd-undo" id="bgs-sd-undo">Undo on this device</button>';
-          var undo = msg.querySelector('#bgs-sd-undo');
-          undo.addEventListener('click', function () {
-            var snap;
-            try { snap = JSON.parse(_origGetItem.call(localStorage, BGS_STOCK_BACKUP_KEY)); }
-            catch (e) { snap = null; }
-            if (!snap || !snap.items || !snap.items.length) {
-              msg.textContent = 'No local copy to restore from.';
-              return;
-            }
-            localStorage.setItem('fg_inventory', JSON.stringify(snap.items));
-            window.dispatchEvent(new Event('fg_inventory_updated'));
-            msg.textContent = 'Restored ' + snap.items.length + ' products.';
-          });
-          refresh();
-        });
-
+        /* Written past the sync patch on purpose. Every fg_* key syncs, so a
+           backup stored as one would travel with the wipe and be no safety net. */
+        try {
+          _origSetItem.call(localStorage, BGS_STOCK_BACKUP_KEY,
+            JSON.stringify({ ts: Date.now(), items: list }));
+        } catch (e) { /* quota — the Export button is the durable backup */ }
         return true;
+      };
+
+      window.bgsRestoreStockBackup = function () {
+        var snap;
+        try { snap = JSON.parse(_origGetItem.call(localStorage, BGS_STOCK_BACKUP_KEY)); }
+        catch (e) { snap = null; }
+        if (!snap || !snap.items || !snap.items.length) return 0;
+        localStorage.setItem('fg_inventory', JSON.stringify(snap.items));
+        window.dispatchEvent(new Event('fg_inventory_updated'));
+        return snap.items.length;
+      };
+
+      /* Undo sits next to the button, and only while it is useful: stock empty
+         and a local copy still around. */
+      function injectStockUndo() {
+        var btn = null;
+        var buttons = document.querySelectorAll('button');
+        for (var i = 0; i < buttons.length; i++) {
+          if (buttons[i].textContent.trim() === 'Delete All Stock') { btn = buttons[i]; break; }
+        }
+        var existing = document.getElementById('bgs-stock-undo');
+        var snapRaw = _origGetItem.call(localStorage, BGS_STOCK_BACKUP_KEY);
+        var show = !!btn && !bgsReadInventory().length && !!snapRaw;
+
+        if (!show) {
+          if (existing) existing.remove();
+          return;
+        }
+        if (existing) return;
+
+        var count = 0;
+        try { count = (JSON.parse(snapRaw).items || []).length; } catch (e) {}
+        if (!count) return;
+
+        var wrap = document.createElement('span');
+        wrap.id = 'bgs-stock-undo';
+        wrap.innerHTML = '<span>Deleted ' + count + '.</span><button>Undo on this device</button>';
+        wrap.querySelector('button').addEventListener('click', function () {
+          var n = window.bgsRestoreStockBackup();
+          wrap.textContent = n ? 'Restored ' + n + ' products.' : 'No local copy to restore.';
+        });
+        btn.insertAdjacentElement('afterend', wrap);
       }
 
       /* ─────────────────────────────────────────
@@ -3694,7 +3640,6 @@
       var navInjected = false;
       var footerInjected = false;
       var adminInjected = false;
-      var stockDangerInjected = false;
       var heroAdminInjected = false;
       var marqueeAdminInjected = false;
       var goldBuilt = false;
@@ -3885,13 +3830,8 @@
           adminInjected = false;
         }
 
-        // Delete-all-stock control on the stock screen
-        if (!stockDangerInjected) {
-          stockDangerInjected = injectStockDangerZone();
-        }
-        if (stockDangerInjected && !document.getElementById('bgs-stock-danger')) {
-          stockDangerInjected = false;
-        }
+        // Undo affordance beside the admin's Delete All Stock button
+        injectStockUndo();
 
         // Hero products admin panel
         if (!heroAdminInjected) {
@@ -3932,7 +3872,6 @@
         filterInjected = false;
         footerInjected = false;
         adminInjected = false;
-        stockDangerInjected = false;
         heroAdminInjected = false;
         marqueeAdminInjected = false;
         reactBoxHidden = false;

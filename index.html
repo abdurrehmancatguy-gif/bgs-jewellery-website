@@ -5,7 +5,7 @@
     <link rel="icon" href="/logo.png?v=2" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BGS Jewellery</title>
-    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=9"></script>
+    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=10"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-d0osuhxy.css?v=2">
 
     <!-- ═══════════════════════════════════════════════════════════════
@@ -4332,6 +4332,18 @@
         ul.appendChild(footerLink('bgs-terms-li', 'Terms of Use',
                                   function () { bgsOpenLegal('terms'); }));
         ul.appendChild(footerLink('bgs-about-us-li', 'About Us', bgsOpenAbout));
+
+        /* Hide the React-rendered nav links (Collection, Lab Diamonds, etc.)
+           — keep only the three links we just injected. */
+        var ourIds = { 'bgs-privacy-li': 1, 'bgs-terms-li': 1, 'bgs-about-us-li': 1 };
+        var items = ul.querySelectorAll('li');
+        for (var j = 0; j < items.length; j++) {
+          if (!ourIds[items[j].id]) items[j].style.display = 'none';
+        }
+
+        /* Centre the remaining links inside the list. */
+        ul.style.cssText += ';justify-content:center!important;display:flex!important;flex-wrap:wrap!important;gap:1.4rem!important;';
+
         return true;
       }
 

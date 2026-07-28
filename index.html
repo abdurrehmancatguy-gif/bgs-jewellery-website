@@ -1212,8 +1212,7 @@
          order they happen to be painted in. */
       #bgs-editorial .bge-tile,
       #bgs-editorial .bge-headline,
-      #bgs-editorial .bge-eyebrow,
-      #bgs-editorial .bge-cta {
+      #bgs-editorial .bge-eyebrow {
         opacity: 0;
         transform: translateY(26px);
         transition: opacity 0.75s cubic-bezier(0.16,1,0.3,1),
@@ -1224,8 +1223,7 @@
 
       #bgs-editorial.bge-visible .bge-tile,
       #bgs-editorial.bge-visible .bge-headline,
-      #bgs-editorial.bge-visible .bge-eyebrow,
-      #bgs-editorial.bge-visible .bge-cta {
+      #bgs-editorial.bge-visible .bge-eyebrow {
         opacity: 1;
         transform: none;
       }
@@ -1235,8 +1233,7 @@
       @media (prefers-reduced-motion: reduce) {
         #bgs-editorial .bge-tile,
         #bgs-editorial .bge-headline,
-        #bgs-editorial .bge-eyebrow,
-        #bgs-editorial .bge-cta {
+        #bgs-editorial .bge-eyebrow {
           opacity: 1;
           transform: none;
           transition: none;
@@ -1367,27 +1364,6 @@
         -webkit-text-fill-color: transparent;
       }
 
-      .bge-cta {
-        position: absolute;
-        right: 0; bottom: 0;
-        z-index: 4;
-        display: inline-flex;
-        align-items: center;
-        gap: 1.1rem;
-        padding: 0.85rem 1.6rem;
-        border: 1px solid rgba(212,175,55,0.42);
-        background: rgba(8,8,8,0.45);
-        color: #e6d9ad;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-        font-size: 0.6rem;
-        letter-spacing: 0.3em;
-        text-transform: uppercase;
-        cursor: pointer;
-        transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
-      }
-      .bge-cta:hover { background: rgba(212,175,55,0.14); color: #fff; border-color: rgba(212,175,55,0.75); }
-      .bge-cta .bge-arrow { transition: transform 0.25s ease; }
-      .bge-cta:hover .bge-arrow { transform: translateX(5px); }
 
       /* ── Tablet: same collage, captions dropped where they'd collide ── */
       @media (max-width: 1024px) {
@@ -1408,7 +1384,6 @@
         .bge-eyebrow   { order: 1; }
         .bge-headline  { order: 2; }
         .bge-grid-wrap { order: 3; }
-        .bge-cta       { order: 4; }
         .bge-eyebrow {
           position: static;
           display: block;
@@ -1475,15 +1450,6 @@
           transform: scale(var(--bge-zoom, 1));
         }
         .bge-tile .bge-frame { position: relative; inset: auto; width: 100%; aspect-ratio: inherit; }
-        .bge-cta {
-          position: static;
-          display: flex;
-          width: 100%;
-          margin-top: 1.5rem;
-          justify-content: center;
-          padding: 1rem 1.2rem;
-          font-size: 0.58rem;
-        }
       }
 
       /* ── GOLD RATE BAND ──
@@ -4016,19 +3982,13 @@
             '<div class="bge-grid-wrap"></div>' +
             '<h1 class="bge-headline"><span>Timeless, Exquisite,</span>' +
               '<span class="bge-accent">Yours</span></h1>' +
-            '<button class="bge-cta" type="button">' +
-              '<span>Contact Us</span><span class="bge-arrow">&rarr;</span>' +
-            '</button>' +
           '</div>';
         sec.appendChild(wrap);
 
-        wrap.querySelector('.bge-cta').addEventListener('click', bgsGoToContact);
-
-        /* Eyebrow first, headline just behind it, CTA last — the tiles carry
-           their own delays from the renderer. */
+        /* Eyebrow first, headline just behind it — the tiles carry their own
+           delays from the renderer. */
         wrap.querySelector('.bge-eyebrow').style.setProperty('--bge-delay', '0s');
         wrap.querySelector('.bge-headline').style.setProperty('--bge-delay', '0.12s');
-        wrap.querySelector('.bge-cta').style.setProperty('--bge-delay', '0.72s');
 
         bgsRenderEditorialTiles();
         bgsWatchEditorialReveal(wrap);

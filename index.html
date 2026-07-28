@@ -393,6 +393,23 @@
       }
       #bgs-stock-undo button:hover { color: #f0d47c; }
 
+      .bgs-hp-slot {
+        background: rgba(212,175,55,0.1);
+        border: 1px solid rgba(212,175,55,0.3);
+        border-radius: 2px;
+        color: #d4af37;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        font-size: 0.58rem;
+        letter-spacing: 0.06em;
+        padding: 0.28rem 0.25rem;
+        margin-right: 0.6rem;
+        flex: 0 0 auto;
+        cursor: pointer;
+      }
+      .bgs-hp-slot:hover  { border-color: rgba(212,175,55,0.6); }
+      .bgs-hp-slot:focus  { outline: none; border-color: #d4af37; color: #fff; }
+      .bgs-hp-slot option { background: #141414; color: #ddd; }
+
       .bgs-hp-pos {
         background: rgba(255,255,255,0.04);
         border: 1px solid rgba(255,255,255,0.12);
@@ -1072,10 +1089,45 @@
       #bgs-editorial {
         background: #080808;
         padding: clamp(3rem, 7vw, 6rem) clamp(1rem, 4vw, 3.5rem);
-        opacity: 0;
-        transition: opacity 0.8s ease;
       }
-      #bgs-editorial.bge-in { opacity: 1; }
+
+      /* ── Reveal on scroll ──
+         The section holds still until it is actually in view, then the tiles
+         arrive in reading order behind the headline. Delays are set per tile
+         from --bge-i so the stagger follows the numbering rather than the DOM
+         order they happen to be painted in. */
+      #bgs-editorial .bge-tile,
+      #bgs-editorial .bge-headline,
+      #bgs-editorial .bge-eyebrow,
+      #bgs-editorial .bge-cta {
+        opacity: 0;
+        transform: translateY(26px);
+        transition: opacity 0.75s cubic-bezier(0.16,1,0.3,1),
+                    transform 0.75s cubic-bezier(0.16,1,0.3,1);
+        transition-delay: var(--bge-delay, 0s);
+      }
+      #bgs-editorial .bge-tile { transform: translateY(34px) scale(0.965); }
+
+      #bgs-editorial.bge-visible .bge-tile,
+      #bgs-editorial.bge-visible .bge-headline,
+      #bgs-editorial.bge-visible .bge-eyebrow,
+      #bgs-editorial.bge-visible .bge-cta {
+        opacity: 1;
+        transform: none;
+      }
+
+      /* Someone who has asked for less motion gets the composition, not the
+         choreography. */
+      @media (prefers-reduced-motion: reduce) {
+        #bgs-editorial .bge-tile,
+        #bgs-editorial .bge-headline,
+        #bgs-editorial .bge-eyebrow,
+        #bgs-editorial .bge-cta {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
+      }
 
       .bge-stage {
         position: relative;
@@ -1107,9 +1159,18 @@
         object-fit: cover;
         display: block;
         filter: saturate(0.94) brightness(0.95);
+        /* --bge-zoom is how much of the photo is shown, set per image in the
+           admin. Hover multiplies it rather than replacing it, or zoomed
+           images would snap back to 1x on hover. */
+        transform: scale(var(--bge-zoom, 1));
         transition: transform 0.9s cubic-bezier(0.16,1,0.3,1), filter 0.5s ease;
       }
-      .bge-tile:hover img { transform: scale(1.05); filter: saturate(1) brightness(1.05); }
+      .bge-tile:hover img {
+        transform: scale(calc(var(--bge-zoom, 1) * 1.05));
+        filter: saturate(1) brightness(1.05);
+      }
+      /* "Show the whole photograph" — letterboxed rather than cropped. */
+      .bge-tile img.bge-fit { object-fit: contain; background: #0d0d0d; }
 
       .bge-cap {
         position: absolute;
@@ -2985,10 +3046,18 @@
          ───────────────────────────────────────── */
       var BGS_INVENTORY_VISIBLE = false;
 
+      /* 052 493 2609 in international form — the same number the product
+         enquiry links in the bundle already use, so there is one number to
+         change if it ever moves. */
+      var BGS_WHATSAPP = '971524932609';
+
+      /* Opens a WhatsApp chat with the message ready to send. It does not send
+         anything: the customer still types and sends themselves. */
       function bgsGoToContact() {
-        var f = document.getElementById('footer');
-        if (f) f.scrollIntoView({ behavior: 'smooth' });
-        else window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        var text = encodeURIComponent(
+          'Hi BGS Jewellery! I would like to enquire about your collection.');
+        window.open('https://wa.me/' + BGS_WHATSAPP + '?text=' + text,
+                    '_blank', 'noopener,noreferrer');
       }
 
       /* Both "Browse More" buttons (hero and the foot of the collection
@@ -3643,6 +3712,43 @@
          outer columns read down their outside edge, the rest read underneath. */
       var BGS_TILE_CAPS = ['v', 'v', 'v', 'h', 'v', 'vr', 'h', 'h', 'h'];
 
+      /* How much of the photograph is shown. 'fit' is handled separately with
+         object-fit; the rest scale the image inside its frame, anchored at the
+         chosen position so zooming crops toward that point. */
+      var BGS_HERO_ZOOMS = [
+        ['fit',  'Whole image'],
+        ['1',    'Fill card (100%)'],
+        ['1.15', 'Zoom 115%'],
+        ['1.3',  'Zoom 130%'],
+        ['1.5',  'Zoom 150%'],
+        ['1.75', 'Zoom 175%'],
+        ['2',    'Zoom 200%']
+      ];
+      function bgsZoomScale(z) {
+        if (!z || z === 'fit') return '1';
+        var n = parseFloat(z);
+        return (isFinite(n) && n > 0) ? String(n) : '1';
+      }
+
+      /* Reveal the collage when it scrolls into view. Observed once — the
+         section should settle, not replay every time it passes the viewport. */
+      var _bgsRevealObserver = null;
+      function bgsWatchEditorialReveal(el) {
+        if (!el || el.dataset.bgsWatched === '1') return;
+        el.dataset.bgsWatched = '1';
+        if (!window.IntersectionObserver) { el.classList.add('bge-visible'); return; }
+        if (!_bgsRevealObserver) {
+          _bgsRevealObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+              if (!e.isIntersecting) return;
+              e.target.classList.add('bge-visible');
+              _bgsRevealObserver.unobserve(e.target);
+            });
+          }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+        }
+        _bgsRevealObserver.observe(el);
+      }
+
       function bgsRenderEditorialTiles() {
         var wrap = document.getElementById('bgs-editorial');
         if (!wrap) return;
@@ -3651,7 +3757,7 @@
 
         var tiles = bgsHeroTiles();
         var sig = tiles.map(function (t) {
-          return t.id + '|' + t.name + '|' + t.img + '|' + (t.pos || '');
+          return t.id + '|' + t.name + '|' + t.img + '|' + (t.pos || '') + '|' + (t.zoom || '');
         }).join('~');
         if (grid.getAttribute('data-sig') === sig) return;   // nothing changed
         grid.setAttribute('data-sig', sig);
@@ -3663,7 +3769,8 @@
                      : kind === 'vr' ? 'bge-cap bge-cap-v bge-cap-right'
                      : 'bge-cap bge-cap-v';
           var label = t.tag || t.name || '';
-          return '<figure class="bge-tile bge-t' + n + '">' +
+          return '<figure class="bge-tile bge-t' + n + '"' +
+                   ' style="--bge-delay:' + (0.06 * i + 0.05).toFixed(2) + 's">' +
                    '<span class="' + capCls + '">' +
                      '<span class="bge-num">' + (n < 10 ? '0' + n : n) + '</span>' +
                      '<span class="bge-label">' + escHtml(label) + '</span>' +
@@ -3673,9 +3780,12 @@
                         deferring them only delays the hero. */
                      /* eager, explicitly: all nine are above the fold, and the
                         global perf pass below would otherwise lazy-load them. */
-                     '<img src="' + escHtml(t.img) + '" alt="' + escHtml(t.name || label) +
-                       '" decoding="async" loading="eager" fetchpriority="high"' +
-                       ' style="object-position:' + escHtml(t.pos || 'center') + '">' +
+                     '<img class="' + (t.zoom === 'fit' ? 'bge-fit' : '') + '"' +
+                       ' src="' + escHtml(t.img) + '" alt="' + escHtml(t.name || label) + '"' +
+                       ' decoding="async" loading="eager" fetchpriority="high"' +
+                       ' style="object-position:' + escHtml(t.pos || 'center') + ';' +
+                         'transform-origin:' + escHtml(t.pos || 'center') + ';' +
+                         '--bge-zoom:' + bgsZoomScale(t.zoom) + '">' +
                    '</span>' +
                  '</figure>';
         }).join('');
@@ -3709,15 +3819,16 @@
           '</div>';
         sec.appendChild(wrap);
 
-        wrap.querySelector('.bge-cta').addEventListener('click', function () {
-          var f = document.getElementById('footer');
-          if (f) f.scrollIntoView({ behavior: 'smooth' });
-        });
+        wrap.querySelector('.bge-cta').addEventListener('click', bgsGoToContact);
+
+        /* Eyebrow first, headline just behind it, CTA last — the tiles carry
+           their own delays from the renderer. */
+        wrap.querySelector('.bge-eyebrow').style.setProperty('--bge-delay', '0s');
+        wrap.querySelector('.bge-headline').style.setProperty('--bge-delay', '0.12s');
+        wrap.querySelector('.bge-cta').style.setProperty('--bge-delay', '0.72s');
 
         bgsRenderEditorialTiles();
-        var reveal = function () { wrap.classList.add('bge-in'); };
-        requestAnimationFrame(function () { requestAnimationFrame(reveal); });
-        setTimeout(reveal, 400);
+        bgsWatchEditorialReveal(wrap);
         return true;
       }
 
@@ -3775,12 +3886,27 @@
               var upBtn   = i > 0 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + escHtml(p.id) + '\',-1)">↑</button>' : '<span style="width:24px;display:inline-block"></span>';
               var downBtn = i < selected.length-1 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + escHtml(p.id) + '\',1)">↓</button>' : '<span style="width:24px;display:inline-block"></span>';
               return '<div class="bgs-hp-selected-row">' +
-                '<span class="bgs-hp-sel-num">' + (i+1) + '</span>' +
+                '<select class="bgs-hp-slot" title="Which card this piece takes in the hero"' +
+                  ' data-id="' + escHtml(p.id) + '"' +
+                  ' onchange="bgsHeroSetSlot(this.dataset.id, this.value)">' +
+                  selected.map(function (_, si) {
+                    return '<option value="' + (si+1) + '"' + (si === i ? ' selected' : '') + '>' +
+                             'Card ' + (si+1) + '</option>';
+                  }).join('') +
+                '</select>' +
                 '<img class="bgs-hp-sel-img" src="' + escHtml(p.img) + '" alt="">' +
                 '<input class="bgs-hp-sel-name bgs-hp-rename" type="text" value="' + escHtml(p.name) + '"' +
                   ' data-id="' + escHtml(p.id) + '" title="Rename — shown under this tile in the hero"' +
                   ' onchange="bgsHeroRename(this.dataset.id, this.value)"' +
                   ' onkeydown="if(event.key===\'Enter\'){this.blur();}">' +
+                '<select class="bgs-hp-pos" title="How much of the photo to show"' +
+                  ' data-id="' + escHtml(p.id) + '"' +
+                  ' onchange="bgsHeroSetZoom(this.dataset.id, this.value)">' +
+                  BGS_HERO_ZOOMS.map(function (o) {
+                    var on = (p.zoom || '1') === o[0] ? ' selected' : '';
+                    return '<option value="' + o[0] + '"' + on + '>' + o[1] + '</option>';
+                  }).join('') +
+                '</select>' +
                 '<select class="bgs-hp-pos" title="Which part of the photo to show"' +
                   ' data-id="' + escHtml(p.id) + '"' +
                   ' onchange="bgsHeroSetPos(this.dataset.id, this.value)">' +
@@ -3813,7 +3939,7 @@
         panel.innerHTML =
           '<p class="bgs-hp-title">Hero Products — The Collection</p>' +
           '<p class="bgs-hp-sub">The nine pieces in the homepage hero, in order. Position 1 is the large tile top-left. ' +
-            'Reorder with ↑↓, click a name to rename it, and use the dropdown to choose which part of a photo to show if the piece gets cropped out of frame. ' +
+            'Pick the card each piece sits in, click a name to rename it, and use the two dropdowns to set how much of the photo shows and which part of it. ' +
             'Leave empty to show the defaults.</p>' +
           '<p class="bgs-hp-section-label">Currently featured (' + selected.length + ' of ' + BGS_HERO_MAX + ')</p>' +
           selHtml +
@@ -3889,6 +4015,34 @@
         ['left bottom',  'Bottom left'],
         ['right bottom', 'Bottom right']
       ];
+
+      /* Which of the nine cards a piece occupies. Swaps with whatever is in
+         the target card rather than shifting the rest along — asking for card 3
+         should not renumber everything after it. */
+      window.bgsHeroSetSlot = function (id, slot) {
+        var want = parseInt(slot, 10) - 1;
+        var sel = getHeroSelection();
+        if (!(want >= 0 && want < sel.length)) return;
+        var from = -1;
+        for (var i = 0; i < sel.length; i++) { if (sel[i].id === id) { from = i; break; } }
+        if (from < 0 || from === want) return;
+        var tmp = sel[want]; sel[want] = sel[from]; sel[from] = tmp;
+        saveHeroSelection(sel);
+        renderHeroPanel();
+      };
+
+      window.bgsHeroSetZoom = function (id, zoom) {
+        var sel = getHeroSelection();
+        for (var i = 0; i < sel.length; i++) {
+          if (sel[i].id === id) {
+            if ((sel[i].zoom || '1') === zoom) return;
+            sel[i].zoom = zoom;
+            saveHeroSelection(sel);
+            renderHeroPanel();
+            return;
+          }
+        }
+      };
 
       window.bgsHeroSetPos = function (id, pos) {
         var sel = getHeroSelection();

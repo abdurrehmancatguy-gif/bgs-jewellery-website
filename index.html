@@ -1211,8 +1211,7 @@
          from --bge-i so the stagger follows the numbering rather than the DOM
          order they happen to be painted in. */
       #bgs-editorial .bge-tile,
-      #bgs-editorial .bge-headline,
-      #bgs-editorial .bge-eyebrow {
+      #bgs-editorial .bge-headline {
         opacity: 0;
         transform: translateY(26px);
         transition: opacity 0.75s cubic-bezier(0.16,1,0.3,1),
@@ -1222,8 +1221,7 @@
       #bgs-editorial .bge-tile { transform: translateY(34px) scale(0.965); }
 
       #bgs-editorial.bge-visible .bge-tile,
-      #bgs-editorial.bge-visible .bge-headline,
-      #bgs-editorial.bge-visible .bge-eyebrow {
+      #bgs-editorial.bge-visible .bge-headline {
         opacity: 1;
         transform: none;
       }
@@ -1232,8 +1230,7 @@
          choreography. */
       @media (prefers-reduced-motion: reduce) {
         #bgs-editorial .bge-tile,
-        #bgs-editorial .bge-headline,
-        #bgs-editorial .bge-eyebrow {
+        #bgs-editorial .bge-headline {
           opacity: 1;
           transform: none;
           transition: none;
@@ -1247,16 +1244,6 @@
         aspect-ratio: 1.55;      /* the drawn proportion of the composition */
       }
 
-      .bge-eyebrow {
-        position: absolute;
-        top: -1.9rem; right: 0;
-        font-size: 0.56rem;
-        letter-spacing: 0.34em;
-        text-transform: uppercase;
-        color: #9f8a48;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-        white-space: nowrap;
-      }
 
       .bge-tile { position: absolute; margin: 0; overflow: visible; }
       .bge-tile .bge-frame {
@@ -1381,16 +1368,8 @@
           display: flex;
           flex-direction: column;
         }
-        .bge-eyebrow   { order: 1; }
         .bge-headline  { order: 2; }
         .bge-grid-wrap { order: 3; }
-        .bge-eyebrow {
-          position: static;
-          display: block;
-          text-align: left;
-          margin-bottom: 0.8rem;
-          font-size: 0.5rem;
-        }
         .bge-headline {
           position: static;
           text-align: left;
@@ -3978,17 +3957,14 @@
         wrap.id = 'bgs-editorial';
         wrap.innerHTML =
           '<div class="bge-stage">' +
-            '<span class="bge-eyebrow">Nine Objects &middot; One Story</span>' +
             '<div class="bge-grid-wrap"></div>' +
             '<h1 class="bge-headline"><span>Timeless, Exquisite,</span>' +
               '<span class="bge-accent">Yours</span></h1>' +
           '</div>';
         sec.appendChild(wrap);
 
-        /* Eyebrow first, headline just behind it — the tiles carry their own
-           delays from the renderer. */
-        wrap.querySelector('.bge-eyebrow').style.setProperty('--bge-delay', '0s');
-        wrap.querySelector('.bge-headline').style.setProperty('--bge-delay', '0.12s');
+        /* Headline leads, the tiles carry their own delays from the renderer. */
+        wrap.querySelector('.bge-headline').style.setProperty('--bge-delay', '0s');
 
         bgsRenderEditorialTiles();
         bgsWatchEditorialReveal(wrap);

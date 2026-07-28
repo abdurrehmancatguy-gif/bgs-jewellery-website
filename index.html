@@ -4751,7 +4751,17 @@
           slotLabel: function (i) { return 'Slat ' + (i + 1); }
         }
       };
-      function bgsSection(id) { return BGS_SECTIONS[id] || BGS_SECTIONS.collage; }
+      function bgsSection(id) {
+        var sec = BGS_SECTIONS[id];
+        if (!sec) {
+          /* Every entry point passes a section. Arriving here means a caller
+             lost it — which previously failed silently, the control appearing
+             to reset while the real value was dropped. */
+          console.warn('[BGS] unknown hero section:', id, '- falling back to collage');
+          sec = BGS_SECTIONS.collage;
+        }
+        return sec;
+      }
 
       function getSectionSelection(sid) {
         try { return JSON.parse(localStorage.getItem(bgsSection(sid).store) || '[]'); }
@@ -4798,9 +4808,9 @@
               var upBtn   = i > 0 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + SEC.id + '\',\'' + escHtml(p.id) + '\',-1)">↑</button>' : '<span style="width:24px;display:inline-block"></span>';
               var downBtn = i < selected.length-1 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + SEC.id + '\',\'' + escHtml(p.id) + '\',1)">↓</button>' : '<span style="width:24px;display:inline-block"></span>';
               return '<div class="bgs-hp-selected-row">' +
-                '<select class="bgs-hp-slot" title="Where this piece sits in the collage"' +
-                  ' data-id="' + escHtml(p.id) + '"' +
-                  ' onchange="bgsHeroSetSlot(this.dataset.id, this.value)">' +
+                '<select class="bgs-hp-slot" title="Where this piece sits in this section"' +
+                  ' data-sid="' + SEC.id + '" data-id="' + escHtml(p.id) + '"' +
+                  ' onchange="bgsHeroSetSlot(this.dataset.sid, this.dataset.id, this.value)">' +
                   selected.map(function (_, si) {
                     return '<option value="' + (si+1) + '"' + (si === i ? ' selected' : '') + '>' +
                              escHtml(SEC.slotLabel(si)) + '</option>';
@@ -4808,24 +4818,25 @@
                 '</select>' +
                 '<img class="bgs-hp-sel-img" src="' + escHtml(p.img) + '" alt="">' +
                 '<input class="bgs-hp-sel-name bgs-hp-rename" type="text" value="' + escHtml(p.name) + '"' +
-                  ' data-id="' + escHtml(p.id) + '" title="Rename — shown under this tile in the hero"' +
-                  ' onchange="bgsHeroRename(this.dataset.id, this.value)"' +
+                  ' data-sid="' + SEC.id + '" data-id="' + escHtml(p.id) + '"' +
+                  ' title="Rename — shown under this piece"' +
+                  ' onchange="bgsHeroRename(this.dataset.sid, this.dataset.id, this.value)"' +
                   ' onkeydown="if(event.key===\'Enter\'){this.blur();}">' +
                 '<div class="bgs-hp-sel-btns">' + upBtn + downBtn +
                   '<button class="bgs-hp-remove" onclick="bgsHeroRemove(\'' + SEC.id + '\',\'' + escHtml(p.id) + '\')">✕</button>' +
                 '</div>' +
                 '<div class="bgs-hp-adjust">' +
                 '<select class="bgs-hp-pos" title="How much of the photo to show"' +
-                  ' data-id="' + escHtml(p.id) + '"' +
-                  ' onchange="bgsHeroSetZoom(this.dataset.id, this.value)">' +
+                  ' data-sid="' + SEC.id + '" data-id="' + escHtml(p.id) + '"' +
+                  ' onchange="bgsHeroSetZoom(this.dataset.sid, this.dataset.id, this.value)">' +
                   BGS_HERO_ZOOMS.map(function (o) {
                     var on = (p.zoom || '1') === o[0] ? ' selected' : '';
                     return '<option value="' + o[0] + '"' + on + '>' + o[1] + '</option>';
                   }).join('') +
                 '</select>' +
                 '<select class="bgs-hp-pos" title="Which part of the photo to show"' +
-                  ' data-id="' + escHtml(p.id) + '"' +
-                  ' onchange="bgsHeroSetPos(this.dataset.id, this.value)">' +
+                  ' data-sid="' + SEC.id + '" data-id="' + escHtml(p.id) + '"' +
+                  ' onchange="bgsHeroSetPos(this.dataset.sid, this.dataset.id, this.value)">' +
                   BGS_HERO_POSITIONS.map(function (o) {
                     var on = (p.pos || 'center') === o[0] ? ' selected' : '';
                     return '<option value="' + o[0] + '"' + on + '>' + o[1] + '</option>';

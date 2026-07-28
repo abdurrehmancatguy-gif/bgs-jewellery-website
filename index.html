@@ -4010,7 +4010,7 @@
       /* The nine pieces the hero collage ships with. Real product photography
          rather than the stock placeholders this used to hold — and the same
          pool the admin picks from, so the hero and The Collection stay in step.
-         Nine is the layout's capacity; BGS_HERO_MAX enforces it. */
+         Nine is the layout's capacity; SEC.max enforces it. */
       var BGS_HERO_MAX = 9;
       var BGS_SHOWCASE = [
         {id:'ring-solitaire',   img:'/assets/hero/collection/ring-solitaire.webp?v=1',   tag:'Solitaire Ring',  name:'Diamond Solitaire Ring', metal:'White Gold',     stone:'Brilliant-Cut Diamond'},
@@ -4067,6 +4067,20 @@
          the layout rather than as an index. The two that differ most in shape
          say so — those are the ones a photo can be chosen badly for. Names
          describe the desktop composition; phones stack the same order. */
+      /* Anchor points for the quick position control — the coarse alternative
+         to opening the cropper. */
+      var BGS_HERO_POSITIONS = [
+        ['center',       'Centre'],
+        ['top',          'Top'],
+        ['bottom',       'Bottom'],
+        ['left',         'Left'],
+        ['right',        'Right'],
+        ['left top',     'Top left'],
+        ['right top',    'Top right'],
+        ['left bottom',  'Bottom left'],
+        ['right bottom', 'Bottom right']
+      ];
+
       var BGS_CARD_NAMES = [
         'Top left (large)',
         'Top centre-left',
@@ -4181,23 +4195,28 @@
       /* ─────────────────────────────────────────
          THE GOLD EDITIONS — accordion strip
 
-         The same nine pieces as the collage, so there is one curated set to
-         keep up to date rather than two. The crop is separate though: a slat
-         opens to a tall portrait, nothing like the collage cards, so a single
-         crop could not suit both. Each piece therefore carries `crop` for the
-         collage and `crop2` for this strip.
+         Its own list of pieces, chosen independently of the collage — adding a
+         photograph here does not put it in the collage, and vice versa. Each
+         section stores its own selection, so a piece carries its own name and
+         its own crop in each, cut against that section's frame.
          ───────────────────────────────────────── */
       /* Measured from an opened slat rather than guessed: 369x651 at 1400 wide.
          Crops are cut against this, so it has to be the real shape. */
       var BGS_SLAT_ASPECT = 0.56;
 
+      function bgsEditionTiles() {
+        var sel = getSectionSelection('editions');
+        var list = sel.length ? sel : BGS_SHOWCASE;
+        return list.slice(0, BGS_HERO_MAX);
+      }
+
       function bgsRenderEditionSlats() {
         var strip = document.querySelector('#bgs-editions .bge2-strip');
         if (!strip) return;
-        var tiles = bgsHeroTiles();
+        var tiles = bgsEditionTiles();
         var sig = tiles.map(function (t) {
           return t.id + '|' + t.name + '|' + t.img + '|' +
-                 (t.crop2 ? [t.crop2.x, t.crop2.y, t.crop2.w, t.crop2.h].join(',') : '');
+                 (t.crop ? [t.crop.x, t.crop.y, t.crop.w, t.crop.h].join(',') : '');
         }).join('~');
         if (strip.getAttribute('data-sig') === sig) return;
         strip.setAttribute('data-sig', sig);
@@ -4234,7 +4253,7 @@
          the slat's shape changes between hover states and breakpoints, and a
          fixed rectangle would have to be stretched to fit any of them. */
       function bgsSlatImgStyle(t) {
-        var c = t.crop2;
+        var c = t.crop;
         if (c && isFinite(c.fx) && isFinite(c.fy)) {
           var origin = (c.fx * 100).toFixed(2) + '% ' + (c.fy * 100).toFixed(2) + '%';
           return 'object-position:' + origin + ';transform-origin:' + origin + ';' +
@@ -4273,7 +4292,7 @@
         return true;
       }
 
-      window.addEventListener('bgs_hero_updated', bgsRenderEditionSlats);
+      window.addEventListener('bgs_editions_updated', bgsRenderEditionSlats);
 
       function bgsBuildEditorialHero() {
         var sec = document.getElementById('collection');
@@ -4329,6 +4348,55 @@
         return pool;
       }
 
+      /* Two independent sections. Each keeps its own list of pieces in its own
+         storage key, so choosing a photo for one has no effect on the other —
+         put a piece in the strip and it stays out of the collage until you add
+         it there too. Because the lists are separate, each item carries its own
+         plain `crop`, cut against that section's frame. */
+      var BGS_SECTIONS = {
+        collage: {
+          id: 'collage',
+          store: 'fg_hero_products',
+          event: 'bgs_hero_updated',
+          panelId: 'bgs-hero-panel',
+          title: 'The Collection — Collage',
+          blurb: 'The nine pieces in the homepage collage. Each names where it sits. ' +
+                 'Reorder by card, click a name to rename it, and Crop opens the photo in ' +
+                 'that card\u2019s own shape.',
+          max: 9,
+          frameName: function (i) { return bgsCardName(i); },
+          frameAspect: function (i) { return bgsCardAspect(i); },
+          slotLabel: function (i) { return bgsCardName(i); }
+        },
+        editions: {
+          id: 'editions',
+          store: 'fg_edition_products',
+          event: 'bgs_editions_updated',
+          panelId: 'bgs-editions-panel',
+          title: 'The Gold Editions — Strip',
+          blurb: 'The nine slats in the accordion strip, chosen separately from the collage. ' +
+                 'Reorder by slat, click a name to rename it, and Crop opens the photo in the ' +
+                 'shape of an opened slat.',
+          max: 9,
+          frameName: function (i) { return 'Slat ' + (i + 1); },
+          frameAspect: function () { return BGS_SLAT_ASPECT; },
+          slotLabel: function (i) { return 'Slat ' + (i + 1); }
+        }
+      };
+      function bgsSection(id) { return BGS_SECTIONS[id] || BGS_SECTIONS.collage; }
+
+      function getSectionSelection(sid) {
+        try { return JSON.parse(localStorage.getItem(bgsSection(sid).store) || '[]'); }
+        catch (e) { return []; }
+      }
+
+      function saveSectionSelection(sid, arr) {
+        var sec = bgsSection(sid);
+        if (arr.length === 0) localStorage.removeItem(sec.store);
+        else localStorage.setItem(sec.store, JSON.stringify(arr));
+        window.dispatchEvent(new Event(sec.event));
+      }
+
       function getHeroSelection() {
         try { return JSON.parse(localStorage.getItem('fg_hero_products') || '[]'); }
         catch(e) { return []; }
@@ -4347,10 +4415,11 @@
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
       }
 
-      function renderHeroPanel() {
-        var panel = document.getElementById('bgs-hero-panel');
+      function renderSectionPanel(sid) {
+        var SEC = bgsSection(sid);
+        var panel = document.getElementById(SEC.panelId);
         if (!panel) return;
-        var selected = getHeroSelection();
+        var selected = getSectionSelection(sid);
         var selIds = selected.map(function(p){ return p.id; });
         var pool = getHeroPool();
         var available = pool.filter(function(p){ return selIds.indexOf(p.id) === -1; });
@@ -4358,15 +4427,15 @@
         var selHtml = selected.length === 0
           ? '<p style="color:#444;font-size:0.7rem;padding:0.6rem 0 1rem;">None selected — collection shows defaults.</p>'
           : selected.map(function(p, i) {
-              var upBtn   = i > 0 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + escHtml(p.id) + '\',-1)">↑</button>' : '<span style="width:24px;display:inline-block"></span>';
-              var downBtn = i < selected.length-1 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + escHtml(p.id) + '\',1)">↓</button>' : '<span style="width:24px;display:inline-block"></span>';
+              var upBtn   = i > 0 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + SEC.id + '\',\'' + escHtml(p.id) + '\',-1)">↑</button>' : '<span style="width:24px;display:inline-block"></span>';
+              var downBtn = i < selected.length-1 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + SEC.id + '\',\'' + escHtml(p.id) + '\',1)">↓</button>' : '<span style="width:24px;display:inline-block"></span>';
               return '<div class="bgs-hp-selected-row">' +
                 '<select class="bgs-hp-slot" title="Where this piece sits in the collage"' +
                   ' data-id="' + escHtml(p.id) + '"' +
                   ' onchange="bgsHeroSetSlot(this.dataset.id, this.value)">' +
                   selected.map(function (_, si) {
                     return '<option value="' + (si+1) + '"' + (si === i ? ' selected' : '') + '>' +
-                             escHtml(bgsCardName(si)) + '</option>';
+                             escHtml(SEC.slotLabel(si)) + '</option>';
                   }).join('') +
                 '</select>' +
                 '<img class="bgs-hp-sel-img" src="' + escHtml(p.img) + '" alt="">' +
@@ -4375,7 +4444,7 @@
                   ' onchange="bgsHeroRename(this.dataset.id, this.value)"' +
                   ' onkeydown="if(event.key===\'Enter\'){this.blur();}">' +
                 '<div class="bgs-hp-sel-btns">' + upBtn + downBtn +
-                  '<button class="bgs-hp-remove" onclick="bgsHeroRemove(\'' + escHtml(p.id) + '\')">✕</button>' +
+                  '<button class="bgs-hp-remove" onclick="bgsHeroRemove(\'' + SEC.id + '\',\'' + escHtml(p.id) + '\')">✕</button>' +
                 '</div>' +
                 '<div class="bgs-hp-adjust">' +
                 '<select class="bgs-hp-pos" title="How much of the photo to show"' +
@@ -4395,26 +4464,17 @@
                   }).join('') +
                 '</select>' +
                 '<button class="bgs-hp-cropbtn' + (p.crop ? ' bgs-on' : '') + '"' +
-                  ' title="Crop for the ' + escHtml(bgsCardName(i).toLowerCase()) + ' card in the collage"' +
-                  ' onclick="bgsHeroCropToggle(\'' + escHtml(p.id) + '\',\'crop\')">' +
-                  (p.crop ? 'Re-crop card' : 'Crop card') +
-                '</button>' +
-                '<button class="bgs-hp-cropbtn' + (p.crop2 ? ' bgs-on' : '') + '"' +
-                  ' title="Crop for this piece\u2019s slat in The Gold Editions strip"' +
-                  ' onclick="bgsHeroCropToggle(\'' + escHtml(p.id) + '\',\'crop2\')">' +
-                  (p.crop2 ? 'Re-crop slat' : 'Crop slat') +
+                  ' title="Crop this photo for ' + escHtml(SEC.frameName(i)) + '"' +
+                  ' onclick="bgsHeroCropToggle(\'' + SEC.id + '\',\'' + escHtml(p.id) + '\')">' +
+                  (p.crop ? 'Re-crop' : 'Crop') +
                 '</button>' +
                 '</div>' +
               '</div>' +
-              (_bgsCropOpen && _bgsCropOpen.indexOf(p.id + '::') === 0
+              (_bgsCropOpen === SEC.id + '::' + p.id
                 ? (function () {
-                    var key = _bgsCropOpen.slice((p.id + '::').length);
-                    var where = key === 'crop2'
-                      ? 'the Gold Editions slat'
-                      : bgsCardName(i) + ' card';
                     return '<div class="bgs-hp-crop" data-id="' + escHtml(p.id) + '"' +
-                             ' data-key="' + escHtml(key) + '">' +
-                    '<p class="bgs-hp-crop-head">Crop for ' + escHtml(where) +
+                             ' data-sid="' + escHtml(SEC.id) + '">' +
+                    '<p class="bgs-hp-crop-head">Crop for ' + escHtml(SEC.frameName(i)) +
                       ' — drag to move, slider to zoom</p>' +
                     '<div class="bgs-hp-crop-stage">' +
                       '<img src="' + escHtml(p.img) + '" alt="">' +
@@ -4436,27 +4496,27 @@
 
         /* Say the hero is full before a click can fail, rather than only in the
            alert afterwards. */
-        var full = selected.length >= BGS_HERO_MAX;
+        var full = selected.length >= SEC.max;
         var availHtml = full
           ? '<p style="color:#e0a33c;font-size:0.72rem;line-height:1.6;">' +
-              'The hero is full at ' + BGS_HERO_MAX + ' pieces. Remove one above to free a place.</p>'
+              'The hero is full at ' + SEC.max + ' pieces. Remove one above to free a place.</p>'
           : available.length === 0
           ? '<p style="color:#444;font-size:0.7rem;">All products added.</p>'
           : available.map(function(p) {
-              return '<div class="bgs-hp-card" onclick="bgsHeroAdd(\'' + escHtml(p.id) + '\')">' +
+              return '<div class="bgs-hp-card" onclick="bgsHeroAdd(\'' + SEC.id + '\',\'' + escHtml(p.id) + '\')">' +
                 '<div class="bgs-hp-card-img-wrap"><img src="' + escHtml(p.img) + '" alt="" loading="lazy"><div class="bgs-hp-card-add">＋</div></div>' +
                 '<div class="bgs-hp-card-info"><p class="bgs-hp-card-name">' + escHtml(p.name) + '</p><p class="bgs-hp-card-tag">' + escHtml(p.tag) + '</p></div>' +
               '</div>';
             }).join('');
 
         panel.innerHTML =
-          '<p class="bgs-hp-title">Hero Products — The Collection</p>' +
+          '<p class="bgs-hp-title">' + escHtml(SEC.title) + '</p>' +
           '<p class="bgs-hp-sub">The nine pieces in the homepage hero, in order. Position 1 is the large tile top-left. ' +
             'Pick the card each piece sits in and click a name to rename it. Crop opens the photo in that card\u2019s own shape so you can drag and zoom it to fit; the dropdowns are a quicker alternative when a crop is not needed. ' +
             'Leave empty to show the defaults.</p>' +
-          '<p class="bgs-hp-section-label">Currently featured (' + selected.length + ' of ' + BGS_HERO_MAX + ')</p>' +
+          '<p class="bgs-hp-section-label">Currently featured (' + selected.length + ' of ' + SEC.max + ')</p>' +
           selHtml +
-          (selected.length > 0 ? '<button id="bgs-hp-reset" onclick="bgsHeroClear()">Reset to defaults</button><br><br>' : '') +
+          (selected.length > 0 ? '<button id="bgs-hp-reset" onclick="bgsHeroClear(\'' + SEC.id + '\')">Reset to defaults</button><br><br>' : '') +
           '<p class="bgs-hp-section-label" style="margin-top:' + (selected.length ? '1.5rem' : '0') + '">Add to collection</p>' +
           '<div class="bgs-hp-grid">' + availHtml + '</div>';
 
@@ -4464,114 +4524,40 @@
         bgsCropMount(panel);
       }
 
-      function injectAdminHeroPanel() {
-        if (document.getElementById('bgs-hero-panel')) { renderHeroPanel(); return true; }
-        var goldPanel = document.getElementById('bgs-admin-gold-panel');
-        if (!goldPanel) return false;
-        var panel = document.createElement('div');
-        panel.id = 'bgs-hero-panel';
-        goldPanel.parentElement.insertBefore(panel, goldPanel.nextSibling);
-        renderHeroPanel();
-        return true;
-      }
 
-      window.bgsHeroAdd = function(id) {
-        var pool = getHeroPool();
-        var item = null;
-        for (var i = 0; i < pool.length; i++) { if (pool[i].id === id) { item = pool[i]; break; } }
-        if (!item) return;
-        var sel = getHeroSelection();
-        if (sel.some(function(p){ return p.id === id; })) return;
-        /* The collage has nine placements and no tenth — say so plainly rather
-           than accepting a piece that would never appear. */
-        if (sel.length >= BGS_HERO_MAX) {
-          alert('The hero section holds ' + BGS_HERO_MAX + ' pieces.\n\n' +
-                'Remove one from "Currently featured" before adding ' +
-                (item.name || 'another piece') + '.');
-          return;
-        }
-        sel.push(item);
-        saveHeroSelection(sel);
-        renderHeroPanel();
-      };
-
-      window.bgsHeroRemove = function(id) {
-        saveHeroSelection(getHeroSelection().filter(function(p){ return p.id !== id; }));
-        renderHeroPanel();
-      };
-
-      window.bgsHeroMove = function(id, dir) {
-        var sel = getHeroSelection();
-        var idx = -1;
-        for (var i = 0; i < sel.length; i++) { if (sel[i].id === id) { idx = i; break; } }
-        if (idx < 0) return;
-        var ni = idx + dir;
-        if (ni < 0 || ni >= sel.length) return;
-        var tmp = sel[idx]; sel[idx] = sel[ni]; sel[ni] = tmp;
-        saveHeroSelection(sel);
-        renderHeroPanel();
-      };
-
-      window.bgsHeroClear = function() {
-        saveHeroSelection([]);
-        renderHeroPanel();
-      };
-
-      /* Tiles crop to fill their placement, so a piece sitting off-centre in
-         its photograph can be cut out of frame. This picks which part of the
-         image survives the crop. */
-      var BGS_HERO_POSITIONS = [
-        ['center',       'Centre'],
-        ['top',          'Top'],
-        ['bottom',       'Bottom'],
-        ['left',         'Left'],
-        ['right',        'Right'],
-        ['left top',     'Top left'],
-        ['right top',    'Top right'],
-        ['left bottom',  'Bottom left'],
-        ['right bottom', 'Bottom right']
-      ];
-
-      /* Which of the nine cards a piece occupies. Swaps with whatever is in
-         the target card rather than shifting the rest along — asking for card 3
-         should not renumber everything after it. */
       /* ─────────────────────────────────────────
-         PER-CARD CROPPER
+         PER-FRAME CROPPER
 
-         The nine cards are all different shapes, so "which part of the photo"
-         only has an answer once you know which card it is going in. This shows
-         the image inside that card's own frame and lets you drag and scale it
-         until it sits right. What is saved is the rectangle of the photograph
-         that fills the card, in fractions of the image, so it survives the
-         image being served at a different size.
+         Each section's frames are a different shape — a collage card, an
+         opened slat — so a crop only means something once you know which frame
+         it is for. This opens the photograph inside that frame and saves the
+         rectangle that fills it, in fractions of the image.
          ───────────────────────────────────────── */
-      var _bgsCropOpen = null;   // 'id::key' of the crop being edited
+      var _bgsCropOpen = null;   // 'section::id' of the crop being edited
       var _bgsCropState = null;  // {id, aspect, natW, natH, scale, cx, cy}
 
-      /* Two crops per piece: 'crop' for its collage card, 'crop2' for its slat
-         in the strip. They are different shapes, so they are cropped
-         separately. */
-      window.bgsHeroCropToggle = function (id, key) {
-        var token = id + '::' + (key || 'crop');
+      window.bgsHeroCropToggle = function (sid, id) {
+        var token = sid + '::' + id;
         _bgsCropOpen = (_bgsCropOpen === token) ? null : token;
-        renderHeroPanel();
+        renderSectionPanel(sid);
       };
 
-      function bgsCropMount(panel) {
+function bgsCropMount(panel) {
         var host = panel.querySelector('.bgs-hp-crop');
         if (!host) { _bgsCropState = null; return; }
 
         var id  = host.dataset.id;
-        var key = host.dataset.key || 'crop';
-        var sel = getHeroSelection();
+        var sid = host.dataset.sid || 'collage';
+        var SEC = bgsSection(sid);
+        var sel = getSectionSelection(sid);
         var idx = -1, item = null;
         for (var i = 0; i < sel.length; i++) { if (sel[i].id === id) { idx = i; item = sel[i]; break; } }
         if (!item) return;
 
         /* The collage card's own shape, or the opened slat's — crop against
            whichever frame the photo will actually appear in. */
-        var aspect = (key === 'crop2') ? BGS_SLAT_ASPECT : bgsCardAspect(idx);
-        var saved  = item[key];
+        var aspect = SEC.frameAspect(idx);
+        var saved  = item.crop;
         var stage  = host.querySelector('.bgs-hp-crop-stage');
         var img    = host.querySelector('img');
         var range  = host.querySelector('input[type=range]');
@@ -4675,86 +4661,144 @@
             fy: +Math.min(1, Math.max(0, (-st.cy + SH / 2) / h)).toFixed(4),
             scale: +st.scale.toFixed(4)
           };
-          var arr = getHeroSelection();
+          var arr = getSectionSelection(sid);
           for (var i = 0; i < arr.length; i++) {
-            if (arr[i].id === id) { arr[i][key] = crop; break; }
+            if (arr[i].id === id) { arr[i].crop = crop; break; }
           }
-          saveHeroSelection(arr);
+          saveSectionSelection(sid, arr);
           _bgsCropOpen = null;
-          renderHeroPanel();
+          renderSectionPanel(sid);
         });
 
         host.querySelector('.bgs-hp-crop-reset').addEventListener('click', function () {
-          var arr = getHeroSelection();
+          var arr = getSectionSelection(sid);
           for (var i = 0; i < arr.length; i++) {
-            if (arr[i].id === id) { delete arr[i][key]; break; }
+            if (arr[i].id === id) { delete arr[i].crop; break; }
           }
-          saveHeroSelection(arr);
+          saveSectionSelection(sid, arr);
           _bgsCropOpen = null;
-          renderHeroPanel();
+          renderSectionPanel(sid);
         });
       }
 
-      window.bgsHeroSetSlot = function (id, slot) {
+      window.bgsHeroAdd = function(sid, id) {
+        var SEC = bgsSection(sid);
+        var pool = getHeroPool();
+        var item = null;
+        for (var i = 0; i < pool.length; i++) { if (pool[i].id === id) { item = pool[i]; break; } }
+        if (!item) return;
+        var sel = getSectionSelection(sid);
+        if (sel.some(function(p){ return p.id === id; })) return;
+        if (sel.length >= SEC.max) {
+          alert(SEC.title + ' holds ' + SEC.max + ' pieces.\n\n' +
+                'Remove one from "Currently featured" before adding ' +
+                (item.name || 'another piece') + '.');
+          return;
+        }
+        /* A copy, not a reference: the two sections keep their own names and
+           crops for the same photograph. */
+        sel.push(JSON.parse(JSON.stringify(item)));
+        saveSectionSelection(sid, sel);
+        renderSectionPanel(sid);
+      };
+
+      window.bgsHeroRemove = function(sid, id) {
+        saveSectionSelection(sid, getSectionSelection(sid).filter(function(p){ return p.id !== id; }));
+        renderSectionPanel(sid);
+      };
+
+      window.bgsHeroMove = function(sid, id, dir) {
+        var sel = getSectionSelection(sid);
+        var idx = -1;
+        for (var i = 0; i < sel.length; i++) { if (sel[i].id === id) { idx = i; break; } }
+        if (idx < 0) return;
+        var ni = idx + dir;
+        if (ni < 0 || ni >= sel.length) return;
+        var tmp = sel[idx]; sel[idx] = sel[ni]; sel[ni] = tmp;
+        saveSectionSelection(sid, sel);
+        renderSectionPanel(sid);
+      };
+
+      window.bgsHeroClear = function(sid) {
+        saveSectionSelection(sid, []);
+        renderSectionPanel(sid);
+      };
+
+      /* Which frame a piece occupies. Swaps with whatever is already there
+         rather than shifting the rest along. */
+      window.bgsHeroSetSlot = function (sid, id, slot) {
         var want = parseInt(slot, 10) - 1;
-        var sel = getHeroSelection();
+        var sel = getSectionSelection(sid);
         if (!(want >= 0 && want < sel.length)) return;
         var from = -1;
         for (var i = 0; i < sel.length; i++) { if (sel[i].id === id) { from = i; break; } }
         if (from < 0 || from === want) return;
         var tmp = sel[want]; sel[want] = sel[from]; sel[from] = tmp;
-        saveHeroSelection(sel);
-        renderHeroPanel();
+        saveSectionSelection(sid, sel);
+        renderSectionPanel(sid);
       };
 
-      window.bgsHeroSetZoom = function (id, zoom) {
-        var sel = getHeroSelection();
+      window.bgsHeroSetZoom = function (sid, id, zoom) {
+        var sel = getSectionSelection(sid);
         for (var i = 0; i < sel.length; i++) {
           if (sel[i].id === id) {
             if ((sel[i].zoom || '1') === zoom) return;
             sel[i].zoom = zoom;
-            saveHeroSelection(sel);
-            renderHeroPanel();
+            saveSectionSelection(sid, sel);
+            renderSectionPanel(sid);
             return;
           }
         }
       };
 
-      window.bgsHeroSetPos = function (id, pos) {
-        var sel = getHeroSelection();
+      window.bgsHeroSetPos = function (sid, id, pos) {
+        var sel = getSectionSelection(sid);
         for (var i = 0; i < sel.length; i++) {
           if (sel[i].id === id) {
             if ((sel[i].pos || 'center') === pos) return;
             sel[i].pos = pos;
-            saveHeroSelection(sel);
-            renderHeroPanel();
+            saveSectionSelection(sid, sel);
+            renderSectionPanel(sid);
             return;
           }
         }
       };
 
-      /* Rename a featured piece. The caption under its tile is the tag, so both
-         it and the display name move together — otherwise the hero would keep
-         showing the old wording after a rename. Editing the selection only, so
-         the underlying product keeps its own name elsewhere. */
-      window.bgsHeroRename = function(id, value) {
+      /* Rename within this section only — the same photograph can be labelled
+         differently in the collage and in the strip. */
+      window.bgsHeroRename = function(sid, id, value) {
         var name = String(value == null ? '' : value).trim();
-        if (!name) { renderHeroPanel(); return; }
-        var sel = getHeroSelection();
-        var hit = false;
+        if (!name) { renderSectionPanel(sid); return; }
+        var sel = getSectionSelection(sid);
         for (var i = 0; i < sel.length; i++) {
           if (sel[i].id === id) {
-            if (sel[i].name === name) return;   // nothing to do; don't churn sync
+            if (sel[i].name === name) return;
             sel[i].name = name;
             sel[i].tag  = name;
-            hit = true;
-            break;
+            saveSectionSelection(sid, sel);
+            renderSectionPanel(sid);
+            return;
           }
         }
-        if (!hit) return;
-        saveHeroSelection(sel);
-        renderHeroPanel();
       };
+
+      function injectAdminSectionPanels() {
+        var goldPanel = document.getElementById('bgs-admin-gold-panel');
+        if (!goldPanel) return false;
+        var after = goldPanel;
+        ['collage', 'editions'].forEach(function (sid) {
+          var SEC = bgsSection(sid);
+          var panel = document.getElementById(SEC.panelId);
+          if (!panel) {
+            panel = document.createElement('div');
+            panel.id = SEC.panelId;
+            after.parentElement.insertBefore(panel, after.nextSibling);
+          }
+          renderSectionPanel(sid);
+          after = panel;
+        });
+        return true;
+      }
 
       function makeHeroCard(p) {
         var sub = p.metal ? (p.metal + (p.stone ? ' · ' + p.stone : '')) : (p.stone || '');
@@ -5120,9 +5164,9 @@
 
         // Hero products admin panel
         if (!heroAdminInjected) {
-          heroAdminInjected = injectAdminHeroPanel();
+          heroAdminInjected = injectAdminSectionPanels();
         }
-        if (heroAdminInjected && !document.getElementById('bgs-hero-panel')) {
+        if (heroAdminInjected && !document.getElementById('bgs-editions-panel')) {
           heroAdminInjected = false;
         }
 

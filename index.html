@@ -393,6 +393,22 @@
       }
       #bgs-stock-undo button:hover { color: #f0d47c; }
 
+      .bgs-hp-pos {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 2px;
+        color: rgba(255,255,255,0.72);
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        font-size: 0.6rem;
+        padding: 0.28rem 0.3rem;
+        margin-right: 0.5rem;
+        flex: 0 0 auto;
+        cursor: pointer;
+      }
+      .bgs-hp-pos:hover  { border-color: rgba(212,175,55,0.4); }
+      .bgs-hp-pos:focus  { outline: none; border-color: rgba(212,175,55,0.75); color: #fff; }
+      .bgs-hp-pos option { background: #141414; color: #ddd; }
+
       /* Rename field: looks like the label it replaces until you focus it. */
       .bgs-hp-rename {
         background: transparent;
@@ -1144,6 +1160,20 @@
         text-shadow: 0 6px 40px rgba(0,0,0,0.55);
       }
       .bge-headline span { display: block; }
+      /* "Yours" carries the line — gold, larger, and upright against the
+         italic above it so the contrast does the emphasising rather than
+         size alone. */
+      .bge-headline .bge-accent {
+        font-style: normal;
+        font-size: 1.22em;
+        letter-spacing: 0.01em;
+        background: linear-gradient(100deg, #f7ecc4 0%, #e6cd6a 22%, #c9a233 45%,
+                                    #f4de92 62%, #d2ad39 80%, #f0d685 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+      }
 
       .bge-cta {
         position: absolute;
@@ -1219,9 +1249,15 @@
         }
         .bge-t1 { grid-column: span 2; aspect-ratio: 16 / 10; }
         .bge-t8 { grid-column: span 2; aspect-ratio: 16 / 10; }
-        /* Nine into two columns leaves the last tile orphaned; give it the
-           full width so the mosaic closes cleanly. */
-        .bge-t9 { grid-column: span 2; aspect-ratio: 16 / 10; }
+        /* Nine into two columns leaves the last tile orphaned in the left
+           column. Centre it at its own size rather than stretching it —
+           blowing it up would give the last piece a prominence the layout
+           never intended. */
+        .bge-t9 {
+          grid-column: span 2;
+          justify-self: center;
+          width: calc(50% - 0.275rem) !important;
+        }
         .bge-cap {
           position: static;
           display: flex;
@@ -3614,7 +3650,9 @@
         if (!grid) return;
 
         var tiles = bgsHeroTiles();
-        var sig = tiles.map(function (t) { return t.id + '|' + t.name + '|' + t.img; }).join('~');
+        var sig = tiles.map(function (t) {
+          return t.id + '|' + t.name + '|' + t.img + '|' + (t.pos || '');
+        }).join('~');
         if (grid.getAttribute('data-sig') === sig) return;   // nothing changed
         grid.setAttribute('data-sig', sig);
 
@@ -3636,7 +3674,8 @@
                      /* eager, explicitly: all nine are above the fold, and the
                         global perf pass below would otherwise lazy-load them. */
                      '<img src="' + escHtml(t.img) + '" alt="' + escHtml(t.name || label) +
-                       '" decoding="async" loading="eager" fetchpriority="high">' +
+                       '" decoding="async" loading="eager" fetchpriority="high"' +
+                       ' style="object-position:' + escHtml(t.pos || 'center') + '">' +
                    '</span>' +
                  '</figure>';
         }).join('');
@@ -3662,7 +3701,8 @@
           '<div class="bge-stage">' +
             '<span class="bge-eyebrow">Nine Objects &middot; One Story</span>' +
             '<div class="bge-grid-wrap"></div>' +
-            '<h1 class="bge-headline"><span>Layers hold</span><span>tales of gold</span></h1>' +
+            '<h1 class="bge-headline"><span>Timeless, Exquisite,</span>' +
+              '<span class="bge-accent">Yours</span></h1>' +
             '<button class="bge-cta" type="button">' +
               '<span>Contact Us</span><span class="bge-arrow">&rarr;</span>' +
             '</button>' +
@@ -3741,6 +3781,14 @@
                   ' data-id="' + escHtml(p.id) + '" title="Rename — shown under this tile in the hero"' +
                   ' onchange="bgsHeroRename(this.dataset.id, this.value)"' +
                   ' onkeydown="if(event.key===\'Enter\'){this.blur();}">' +
+                '<select class="bgs-hp-pos" title="Which part of the photo to show"' +
+                  ' data-id="' + escHtml(p.id) + '"' +
+                  ' onchange="bgsHeroSetPos(this.dataset.id, this.value)">' +
+                  BGS_HERO_POSITIONS.map(function (o) {
+                    var on = (p.pos || 'center') === o[0] ? ' selected' : '';
+                    return '<option value="' + o[0] + '"' + on + '>' + o[1] + '</option>';
+                  }).join('') +
+                '</select>' +
                 '<div class="bgs-hp-sel-btns">' + upBtn + downBtn +
                   '<button class="bgs-hp-remove" onclick="bgsHeroRemove(\'' + escHtml(p.id) + '\')">✕</button>' +
                 '</div>' +
@@ -3765,7 +3813,7 @@
         panel.innerHTML =
           '<p class="bgs-hp-title">Hero Products — The Collection</p>' +
           '<p class="bgs-hp-sub">The nine pieces in the homepage hero, in order. Position 1 is the large tile top-left. ' +
-            'Reorder with ↑↓, and click a name to rename it — the name is what shows under its tile. ' +
+            'Reorder with ↑↓, click a name to rename it, and use the dropdown to choose which part of a photo to show if the piece gets cropped out of frame. ' +
             'Leave empty to show the defaults.</p>' +
           '<p class="bgs-hp-section-label">Currently featured (' + selected.length + ' of ' + BGS_HERO_MAX + ')</p>' +
           selHtml +
@@ -3825,6 +3873,34 @@
       window.bgsHeroClear = function() {
         saveHeroSelection([]);
         renderHeroPanel();
+      };
+
+      /* Tiles crop to fill their placement, so a piece sitting off-centre in
+         its photograph can be cut out of frame. This picks which part of the
+         image survives the crop. */
+      var BGS_HERO_POSITIONS = [
+        ['center',       'Centre'],
+        ['top',          'Top'],
+        ['bottom',       'Bottom'],
+        ['left',         'Left'],
+        ['right',        'Right'],
+        ['left top',     'Top left'],
+        ['right top',    'Top right'],
+        ['left bottom',  'Bottom left'],
+        ['right bottom', 'Bottom right']
+      ];
+
+      window.bgsHeroSetPos = function (id, pos) {
+        var sel = getHeroSelection();
+        for (var i = 0; i < sel.length; i++) {
+          if (sel[i].id === id) {
+            if ((sel[i].pos || 'center') === pos) return;
+            sel[i].pos = pos;
+            saveHeroSelection(sel);
+            renderHeroPanel();
+            return;
+          }
+        }
       };
 
       /* Rename a featured piece. The caption under its tile is the tag, so both

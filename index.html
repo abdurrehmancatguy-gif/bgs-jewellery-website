@@ -283,6 +283,159 @@
         color: #d4af37;
       }
 
+      /* ── LEGAL MODAL (Privacy Policy / Terms of Use) ──
+         Same visual language as the About modal, but wider and with a document
+         structure — these run to a dozen sections rather than a few paragraphs. */
+      #bgs-legal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.9);
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        backdrop-filter: blur(4px);
+      }
+      #bgs-legal-overlay.bgs-open { opacity: 1; visibility: visible; }
+
+      #bgs-legal-modal {
+        background: #080808;
+        border: 1px solid rgba(212,175,55,0.22);
+        max-width: 760px;
+        width: 100%;
+        padding: 2.5rem 2.75rem 2.5rem;
+        position: relative;
+        max-height: 88vh;
+        overflow-y: auto;
+        box-shadow: 0 32px 80px rgba(0,0,0,0.95);
+      }
+      #bgs-legal-modal::-webkit-scrollbar { width: 4px; }
+      #bgs-legal-modal::-webkit-scrollbar-track { background: #111; }
+      #bgs-legal-modal::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); }
+
+      #bgs-legal-modal h2 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 2rem;
+        font-weight: 400;
+        font-style: italic;
+        color: #d4af37;
+        margin: 0 0 0.3rem;
+        letter-spacing: 0.02em;
+        line-height: 1.15;
+      }
+      #bgs-legal-modal .bgs-legal-updated {
+        font-size: 0.6rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: rgba(212,175,55,0.45);
+        margin: 0 0 1.4rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      #bgs-legal-modal .bgs-legal-divider {
+        width: 48px; height: 1px;
+        background: rgba(212,175,55,0.3);
+        margin: 0 0 1.75rem;
+      }
+      #bgs-legal-modal h3 {
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        font-size: 0.68rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #d4af37;
+        margin: 2rem 0 0.7rem;
+        font-weight: 600;
+      }
+      #bgs-legal-modal h3:first-of-type { margin-top: 0; }
+      #bgs-legal-modal p {
+        color: rgba(255,255,255,0.65);
+        font-size: 0.84rem;
+        line-height: 1.85;
+        margin: 0 0 0.9rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      #bgs-legal-modal ul {
+        margin: 0 0 1rem;
+        padding-left: 1.1rem;
+        list-style: none;
+      }
+      #bgs-legal-modal li {
+        color: rgba(255,255,255,0.62);
+        font-size: 0.82rem;
+        line-height: 1.75;
+        margin-bottom: 0.45rem;
+        position: relative;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      #bgs-legal-modal li::before {
+        content: '';
+        position: absolute;
+        left: -1.1rem; top: 0.66em;
+        width: 4px; height: 1px;
+        background: rgba(212,175,55,0.55);
+      }
+      /* Two-column material from the source tables */
+      #bgs-legal-modal .bgs-legal-dl {
+        border-top: 1px solid rgba(212,175,55,0.13);
+        margin: 0 0 1.1rem;
+      }
+      #bgs-legal-modal .bgs-legal-dl > div {
+        display: grid;
+        grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+        gap: 0.5rem 1.2rem;
+        padding: 0.65rem 0;
+        border-bottom: 1px solid rgba(212,175,55,0.13);
+      }
+      #bgs-legal-modal .bgs-legal-dl dt {
+        color: rgba(238,230,208,0.9);
+        font-size: 0.78rem;
+        line-height: 1.6;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      #bgs-legal-modal .bgs-legal-dl dd {
+        margin: 0;
+        color: rgba(255,255,255,0.58);
+        font-size: 0.78rem;
+        line-height: 1.6;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      #bgs-legal-modal .bgs-legal-addr {
+        color: rgba(255,255,255,0.62);
+        font-size: 0.82rem;
+        line-height: 1.85;
+        font-style: normal;
+        margin: 0 0 1rem;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+      }
+      #bgs-legal-modal a { color: #d4af37; text-decoration: none; }
+      #bgs-legal-modal a:hover { text-decoration: underline; }
+
+      #bgs-legal-close {
+        position: absolute;
+        top: 1.1rem; right: 1.1rem;
+        background: #080808;
+        border: 1px solid rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.4);
+        cursor: pointer;
+        width: 30px; height: 30px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: border-color 0.2s, color 0.2s;
+        font-family: inherit;
+        line-height: 1;
+      }
+      #bgs-legal-close:hover { border-color: #d4af37; color: #d4af37; }
+
+      @media (max-width: 640px) {
+        #bgs-legal-modal { padding: 2rem 1.25rem; max-height: 92vh; }
+        #bgs-legal-modal .bgs-legal-dl > div { grid-template-columns: 1fr; gap: 0.2rem; }
+      }
+
       /* ── ADMIN PANEL EXTENSION ── */
       #bgs-admin-gold-panel {
         margin-top: 1.5rem;
@@ -3756,6 +3909,235 @@
         document.body.appendChild(overlay);
       }
 
+      /* ─────────────────────────────────────────
+         PRIVACY POLICY & TERMS OF USE
+
+         Transcribed from the supplied PDF. The document's closing section,
+         "Important Notes for Implementation", is deliberately not reproduced:
+         it is guidance addressed to the business (implement a cookie banner,
+         have a UAE lawyer review this, prepare an Arabic version) rather than
+         terms addressed to the visitor, and publishing it would be wrong.
+
+         Bracketed figures — [12] months, [14-26] months, [AED 500] — are the
+         source document's own placeholders and are reproduced verbatim rather
+         than invented. They are legal text and not mine to decide.
+         ───────────────────────────────────────── */
+      var BGS_LEGAL_ADDRESS =
+        'BGS Jewellery L.L.C-FZ<br>Shop No. 2, Plot No. 276-0, AMG Building<br>' +
+        'Gold Souq, Deira, Dubai<br>United Arab Emirates<br>' +
+        'Email: <a href="mailto:info@bgsjewellery.com">info@bgsjewellery.com</a><br>' +
+        'Phone: <a href="tel:+971524932609">+971 52 493 2609</a>';
+
+      var BGS_LEGAL = {
+        privacy: {
+          title: 'Privacy Policy',
+          updated: 'Last updated 28 July 2026',
+          blocks: [
+            ['p', 'BGS Jewellery L.L.C-FZ ("we," "our," "us") respects your privacy and is committed to protecting your personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your personal information when you visit our website.'],
+            ['p', 'This Privacy Policy complies with Federal Decree-Law No. 45 of 2021 concerning the Protection of Personal Data (the "UAE PDPL") and other applicable UAE laws and regulations.'],
+            ['h', '1. Data Controller'],
+            ['p', 'For the purposes of the UAE PDPL, the data controller is:'],
+            ['addr', BGS_LEGAL_ADDRESS],
+            ['h', '2. Personal Data We Collect'],
+            ['p', 'We may collect the following categories of personal data.'],
+            ['p', '<strong>a) Information you voluntarily provide:</strong>'],
+            ['ul', ['Full name', 'Email address', 'Phone number',
+                    'Any other information you choose to provide when contacting us via our website contact form, email, or phone']],
+            ['p', '<strong>b) Information automatically collected:</strong>'],
+            ['ul', ['IP address', 'Browser type and version', 'Operating system',
+                    'Referring website URLs', 'Date and time of your visit',
+                    'Pages viewed and time spent on our website', 'Device information']],
+            ['p', 'This information is collected through cookies and similar tracking technologies. For more details, please refer to our Cookie Policy below.'],
+            ['h', '3. How We Use Your Personal Data'],
+            ['p', 'We process your personal data for the following purposes, in compliance with the lawful processing requirements under the UAE PDPL:'],
+            ['dl', [['To respond to your inquiries submitted via our contact form, email, or phone', 'Consent / Legitimate interest'],
+                    ['To provide information about our jewellery products and services', 'Consent / Legitimate interest'],
+                    ['To improve our website content and user experience', 'Legitimate interest'],
+                    ['To monitor website usage and analyze trends', 'Legitimate interest'],
+                    ['To comply with legal and regulatory obligations', 'Legal obligation']]],
+            ['p', 'We do not use your personal data for unsolicited marketing or promotional communications without your explicit prior consent.'],
+            ['h', '4. How We Share Your Personal Data'],
+            ['p', 'We value your privacy and do not sell, trade, or rent your personal data to third parties. We may share your personal data only in the following limited circumstances:'],
+            ['ul', ['<strong>Service Providers:</strong> With trusted third-party service providers who assist us in operating our website (e.g., hosting providers, analytics services). These providers are bound by strict confidentiality obligations and are only permitted to process your data for the specific purposes we specify.',
+                    '<strong>Legal Compliance:</strong> When required by UAE law, regulation, legal process, or governmental request.',
+                    '<strong>Protection of Rights:</strong> To protect the rights, property, or safety of BGS Jewellery L.L.C-FZ, our users, or others.']],
+            ['h', '5. Data Security'],
+            ['p', 'We implement appropriate technical and organizational measures to protect your personal data against unauthorized access, alteration, disclosure, or destruction. These measures include:'],
+            ['ul', ['Secure servers and firewalls', 'Encryption of data transmission where appropriate',
+                    'Restricted access to personal data on a need-to-know basis', 'Regular security reviews and updates']],
+            ['p', 'While we strive to protect your personal data, no method of transmission over the internet is completely secure. We cannot guarantee absolute security.'],
+            ['h', '6. Data Retention'],
+            ['p', 'We retain your personal data only for as long as necessary to fulfill the purposes for which it was collected, or as required by applicable UAE laws and regulations.'],
+            ['ul', ['<strong>Inquiry Data:</strong> Retained for [12] months from the date of your last contact, unless you request earlier deletion.',
+                    '<strong>Analytics Data:</strong> Retained for the duration required by the analytics service provider, typically [14-26] months.']],
+            ['p', 'After the retention period expires, we will securely delete or anonymize your personal data.'],
+            ['h', '7. Your Rights Under UAE Law'],
+            ['p', 'Under the UAE PDPL, you have the following rights regarding your personal data:'],
+            ['dl', [['Right of Access', 'You have the right to request a copy of the personal data we hold about you.'],
+                    ['Right to Rectification', 'You have the right to request correction of inaccurate or incomplete personal data.'],
+                    ['Right to Erasure', 'You have the right to request deletion of your personal data, subject to certain legal exceptions.'],
+                    ['Right to Restriction', 'You have the right to request restriction of processing of your personal data in certain circumstances.'],
+                    ['Right to Object', 'You have the right to object to the processing of your personal data.'],
+                    ['Right to Withdraw Consent', 'Where processing is based on your consent, you have the right to withdraw that consent at any time.']]],
+            ['p', 'To exercise any of these rights, please contact us at <a href="mailto:info@bgsjewellery.com">info@bgsjewellery.com</a>. We will respond to your request within the timeframes prescribed by UAE law. There is no charge for exercising these rights, unless your request is manifestly unfounded or excessive.'],
+            ['h', '8. Cookies and Tracking Technologies'],
+            ['p', 'Our website uses cookies to enhance your browsing experience and analyze website traffic.'],
+            ['p', '<strong>What are cookies?</strong> Cookies are small text files placed on your device when you visit a website. They help us remember your preferences and understand how you interact with our website.'],
+            ['dl', [['Essential Cookies', 'Necessary for the basic functioning of our website. These do not require your consent.'],
+                    ['Analytical / Performance Cookies', 'Help us understand how visitors use our website (e.g., Google Analytics). These require your consent.'],
+                    ['Functionality Cookies', 'Remember your preferences and improve your user experience.']]],
+            ['p', '<strong>Your choices:</strong> When you first visit our website, you will be presented with a cookie banner allowing you to accept or decline non-essential cookies. You can also manage your cookie preferences through your browser settings at any time.'],
+            ['h', '9. Third-Party Links'],
+            ['p', 'Our website may contain links to third-party websites. This Privacy Policy does not apply to those websites. We encourage you to review the privacy policies of any third-party sites you visit. We are not responsible for the privacy practices or content of such third-party websites.'],
+            ['h', "10. Children's Privacy"],
+            ['p', 'Our website is not intended for children under the age of 18. We do not knowingly collect personal data from children. If you are a parent or guardian and believe your child has provided us with personal data, please contact us immediately so we can take appropriate action.'],
+            ['h', '11. Changes to This Privacy Policy'],
+            ['p', 'We may update this Privacy Policy from time to time. Any material changes will be communicated by:'],
+            ['ul', ['Posting the updated Privacy Policy on our website with a new "Last Updated" date',
+                    'Where appropriate, notifying you via email or through a website notice']],
+            ['p', 'We encourage you to review this Privacy Policy periodically to stay informed about how we protect your personal data.'],
+            ['h', '12. Contact Us'],
+            ['p', 'If you have any questions, concerns, or requests regarding this Privacy Policy or our data handling practices, please contact us:'],
+            ['addr', BGS_LEGAL_ADDRESS]
+          ]
+        },
+
+        terms: {
+          title: 'Terms of Use',
+          updated: 'Last updated 28 July 2026',
+          blocks: [
+            ['p', 'Welcome to the website of BGS Jewellery L.L.C-FZ ("we," "our," "us"). These Terms of Use ("Terms") govern your use of our website.'],
+            ['p', 'Please read these Terms carefully before using our website. By accessing, browsing, or using our website, you acknowledge that you have read, understood, and agree to be bound by these Terms. If you do not agree to these Terms, please do not use our website.'],
+            ['h', '1. Acceptance of Terms'],
+            ['p', 'By using our website, you agree to be bound by these Terms, our Privacy Policy, and any other legal notices or guidelines posted on our website. These Terms constitute a legally binding agreement between you and BGS Jewellery L.L.C-FZ under the general principles of the UAE Civil Code (Federal Law No. 5 of 1985).'],
+            ['p', 'If you are using our website on behalf of a company or other legal entity, you represent that you have the authority to bind that entity to these Terms.'],
+            ['h', '2. Eligibility'],
+            ['p', 'By using our website, you represent and warrant that:'],
+            ['ul', ['You are at least 18 years of age',
+                    'You have the legal capacity to enter into a binding contract',
+                    'You will use our website in compliance with all applicable UAE laws and regulations']],
+            ['h', '3. Use of Our Website'],
+            ['p', '<strong>Permitted uses.</strong> You may use our website for lawful purposes only, including:'],
+            ['ul', ['Browsing information about our jewellery products and services',
+                    'Contacting us for inquiries about our products or services',
+                    'Any other use expressly permitted by these Terms']],
+            ['p', '<strong>Prohibited uses.</strong> You agree NOT to:'],
+            ['ul', ['Use our website for any unlawful, fraudulent, or harmful purpose',
+                    'Attempt to gain unauthorized access to our website, servers, or databases',
+                    'Transmit or upload any viruses, malware, or other harmful code',
+                    'Use any automated means (e.g., bots, scrapers) to access or collect data from our website',
+                    'Interfere with or disrupt the operation of our website',
+                    'Post, transmit, or distribute any defamatory, obscene, or offensive content',
+                    'Violate any applicable UAE laws, regulations, or international conventions to which the UAE is a party']],
+            ['h', '4. Intellectual Property Rights'],
+            ['p', 'All content on our website, including but not limited to:'],
+            ['ul', ['Text, articles, and descriptions', 'Photographs and images of jewellery products',
+                    'Graphics, logos, and trademarks', 'Design, layout, and overall appearance',
+                    'Videos and audio content']],
+            ['p', 'is the exclusive property of BGS Jewellery L.L.C-FZ or its licensors and is protected by UAE and international copyright, trademark, and intellectual property laws.'],
+            ['p', 'You may not:'],
+            ['ul', ['Reproduce, copy, distribute, or publicly display any content from our website without our prior written consent',
+                    'Use our trademarks, logos, or brand names without our prior written consent',
+                    'Modify, adapt, or create derivative works based on our content']],
+            ['p', '<strong>Permitted use:</strong> You may download or print a single copy of content from our website for your personal, non-commercial use, provided you do not remove any copyright or proprietary notices.'],
+            ['h', '5. Disclaimer of Warranties'],
+            ['p', 'Our website and all content, materials, and information provided on it are provided on an "AS IS" and "AS AVAILABLE" basis. To the fullest extent permitted by UAE law:'],
+            ['ul', ['We make no representations or warranties of any kind, express or implied, regarding the operation or availability of our website',
+                    'We do not warrant that our website will be uninterrupted, error-free, or free of viruses or other harmful components',
+                    'We do not warrant the accuracy, completeness, or reliability of any content on our website']],
+            ['p', 'Product images on our website are for illustrative purposes only. Actual product colors, sizes, and appearances may vary due to screen resolution, lighting, or photography.'],
+            ['h', '6. Limitation of Liability'],
+            ['p', 'To the maximum extent permitted by applicable UAE law:'],
+            ['ul', ['BGS Jewellery L.L.C-FZ shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or in connection with your use of our website',
+                    'Our total liability to you for any claim arising from these Terms or your use of our website shall not exceed [AED 500] or the equivalent']],
+            ['p', 'This limitation applies regardless of whether the claim is based on contract, tort (including negligence), strict liability, or any other legal theory.'],
+            ['p', 'Nothing in these Terms excludes or limits our liability:'],
+            ['ul', ['For death or personal injury caused by our negligence',
+                    'For fraud or fraudulent misrepresentation',
+                    'For any liability that cannot be excluded or limited under applicable UAE law']],
+            ['h', '7. Indemnification'],
+            ['p', 'You agree to indemnify, defend, and hold harmless BGS Jewellery L.L.C-FZ, its owners, employees, agents, and affiliates from and against any and all claims, liabilities, damages, losses, costs, and expenses (including reasonable legal fees) arising out of or related to:'],
+            ['ul', ['Your use of our website in violation of these Terms',
+                    'Your violation of any applicable UAE laws or regulations',
+                    'Your infringement of any third-party rights']],
+            ['h', '8. External Links'],
+            ['p', 'Our website may contain links to third-party websites or services that are not owned or controlled by us.'],
+            ['p', 'We have no control over, and assume no responsibility for, the content, privacy policies, or practices of any third-party websites. By using our website, you acknowledge and agree that we are not liable for any damage or loss caused by your use of or reliance on any such third-party content.'],
+            ['h', '9. Modifications to These Terms'],
+            ['p', 'We reserve the right to update or modify these Terms at any time. Any material changes will be communicated by:'],
+            ['ul', ['Posting the updated Terms on our website with a new "Last Updated" date',
+                    'Where appropriate, notifying you via a website notice or email']],
+            ['p', 'Your continued use of our website after any such changes constitutes your acceptance of the revised Terms.'],
+            ['h', '10. Governing Law and Jurisdiction'],
+            ['p', 'These Terms shall be governed by and construed in accordance with the laws of the United Arab Emirates.'],
+            ['p', 'Any dispute, controversy, or claim arising out of or in connection with these Terms or your use of our website shall be submitted to the exclusive jurisdiction of the courts of Dubai, UAE.'],
+            ['h', '11. Severability'],
+            ['p', 'If any provision of these Terms is found to be invalid, illegal, or unenforceable by a court of competent jurisdiction, the remaining provisions shall continue in full force and effect.'],
+            ['h', '12. Waiver'],
+            ['p', 'Our failure to enforce any right or provision of these Terms shall not constitute a waiver of such right or provision. Any waiver must be in writing and signed by an authorized representative of BGS Jewellery L.L.C-FZ.'],
+            ['h', '13. Entire Agreement'],
+            ['p', 'These Terms, together with our Privacy Policy, constitute the entire agreement between you and BGS Jewellery L.L.C-FZ regarding your use of our website and supersede all prior agreements and understandings.'],
+            ['h', '14. Contact Us'],
+            ['p', 'If you have any questions, concerns, or feedback regarding these Terms, please contact us:'],
+            ['addr', BGS_LEGAL_ADDRESS]
+          ]
+        }
+      };
+
+      function bgsLegalHtml(doc) {
+        var out = '<h2>' + escHtml(doc.title) + '</h2>' +
+                  '<p class="bgs-legal-updated">' + escHtml(doc.updated) + '</p>' +
+                  '<div class="bgs-legal-divider"></div>';
+        doc.blocks.forEach(function (b) {
+          var kind = b[0], val = b[1];
+          if (kind === 'h')      out += '<h3>' + val + '</h3>';
+          else if (kind === 'p') out += '<p>' + val + '</p>';
+          else if (kind === 'addr') out += '<address class="bgs-legal-addr">' + val + '</address>';
+          else if (kind === 'ul')
+            out += '<ul>' + val.map(function (li) { return '<li>' + li + '</li>'; }).join('') + '</ul>';
+          else if (kind === 'dl')
+            out += '<dl class="bgs-legal-dl">' + val.map(function (row) {
+              return '<div><dt>' + row[0] + '</dt><dd>' + row[1] + '</dd></div>';
+            }).join('') + '</dl>';
+        });
+        return out;
+      }
+
+      function bgsBuildLegalModal() {
+        if (document.getElementById('bgs-legal-overlay')) return;
+        var overlay = document.createElement('div');
+        overlay.id = 'bgs-legal-overlay';
+        overlay.innerHTML =
+          '<div id="bgs-legal-modal" role="dialog" aria-modal="true" aria-labelledby="bgs-legal-title">' +
+            '<button id="bgs-legal-close" onclick="bgsCloseLegal()" aria-label="Close">&times;</button>' +
+            '<div id="bgs-legal-body"></div>' +
+          '</div>';
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) bgsCloseLegal(); });
+      }
+
+      window.bgsOpenLegal = function (which) {
+        var doc = BGS_LEGAL[which];
+        if (!doc) return;
+        bgsBuildLegalModal();
+        var body = document.getElementById('bgs-legal-body');
+        body.innerHTML = bgsLegalHtml(doc);
+        var modal = document.getElementById('bgs-legal-modal');
+        if (modal) modal.scrollTop = 0;          // always open at the top
+        document.getElementById('bgs-legal-overlay').classList.add('bgs-open');
+        document.body.style.overflow = 'hidden';
+      };
+
+      window.bgsCloseLegal = function () {
+        var overlay = document.getElementById('bgs-legal-overlay');
+        if (overlay) overlay.classList.remove('bgs-open');
+        document.body.style.overflow = '';
+      };
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') bgsCloseLegal();
+      });
+
       window.bgsOpenAbout = function () {
         buildAboutModal();
         var overlay = document.getElementById('bgs-about-overlay');
@@ -3791,17 +4173,31 @@
         var ul = contactLink.closest('ul');
         if (!ul) return false;
 
-        var li = document.createElement('li');
-        li.id = 'bgs-about-us-li';
-        var a = document.createElement('a');
-        a.href = '#';
-        a.textContent = 'About Us';
-        a.style.cssText = 'font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(179,179,179,0.4);text-decoration:none;cursor:pointer;transition:color 0.3s;';
-        a.addEventListener('mouseover', function () { this.style.color = '#d4af37'; });
-        a.addEventListener('mouseout', function () { this.style.color = 'rgba(179,179,179,0.4)'; });
-        a.addEventListener('click', function (e) { e.preventDefault(); bgsOpenAbout(); });
-        li.appendChild(a);
-        ul.appendChild(li);
+        /* One builder for all three, so they cannot drift apart in styling —
+           they sit side by side and any difference would show. */
+        var LINK_CSS = 'font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;' +
+                       'color:rgba(179,179,179,0.4);text-decoration:none;cursor:pointer;' +
+                       'transition:color 0.3s;';
+        function footerLink(id, label, onClick) {
+          var li = document.createElement('li');
+          li.id = id;
+          var a = document.createElement('a');
+          a.href = '#';
+          a.textContent = label;
+          a.style.cssText = LINK_CSS;
+          a.addEventListener('mouseover', function () { this.style.color = '#d4af37'; });
+          a.addEventListener('mouseout', function () { this.style.color = 'rgba(179,179,179,0.4)'; });
+          a.addEventListener('click', function (e) { e.preventDefault(); onClick(); });
+          li.appendChild(a);
+          return li;
+        }
+
+        /* Privacy Policy and Terms sit to the left of About Us, in that order. */
+        ul.appendChild(footerLink('bgs-privacy-li', 'Privacy Policy',
+                                  function () { bgsOpenLegal('privacy'); }));
+        ul.appendChild(footerLink('bgs-terms-li', 'Terms of Use',
+                                  function () { bgsOpenLegal('terms'); }));
+        ul.appendChild(footerLink('bgs-about-us-li', 'About Us', bgsOpenAbout));
         return true;
       }
 

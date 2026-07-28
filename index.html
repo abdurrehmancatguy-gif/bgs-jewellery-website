@@ -67,6 +67,23 @@
       /* Hide the original React 22K-only price box */
       #bgs-hide-react-gold { display: none !important; }
 
+      /* ── NAV — CENTER PILLS ON MOBILE ── */
+      @media (max-width: 640px) {
+        nav.fixed {
+          display: flex !important;
+          justify-content: center !important;
+        }
+        nav.fixed > div:first-child {
+          position: absolute !important;
+          left: 1rem !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+        }
+        nav.fixed > div:last-child {
+          display: none !important;
+        }
+      }
+
       /* ── NAVIGATION DROPDOWN ── */
       #bgs-collection-nav {
         display: inline-flex;

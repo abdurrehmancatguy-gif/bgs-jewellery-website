@@ -28,12 +28,12 @@
       // │  1. REPLACE the placeholder values below with YOUR config.  │
       // └─────────────────────────────────────────────────────────────┘
       var firebaseConfig = {
-        apiKey:            "AIzaSyBbSB5fb8TbsCZvCE6g-CgWcFvlemxEoHU",
-        authDomain:        "bgs-jewellery.firebaseapp.com",
-        projectId:         "bgs-jewellery",
-        storageBucket:     "bgs-jewellery.firebasestorage.app",
-        messagingSenderId: "747894705495",
-        appId:             "1:747894705495:web:84b58fb469aadb048f0212"
+        apiKey:            "AIzaSyAB0Hcyvh27yoYTv_aiLIk4RTVzpjgVOFk",
+        authDomain:        "bgs-jewellery-a92dd.firebaseapp.com",
+        projectId:         "bgs-jewellery-a92dd",
+        storageBucket:     "bgs-jewellery-a92dd.firebasestorage.app",
+        messagingSenderId: "917946437158",
+        appId:             "1:917946437158:web:1ec7c75bb32175108ca0e7"
       };
 
       // ── Nothing below this line needs editing. ──
@@ -2757,6 +2757,8 @@
           console.log('[BGS] Applied update from cloud.');
           window.dispatchEvent(new Event('fg_inventory_updated'));
           window.dispatchEvent(new Event('bgs_gold_updated'));
+          window.dispatchEvent(new Event('bgs_hero_updated'));
+          window.dispatchEvent(new Event('bgs_editions_updated'));
         }
       }
 
@@ -5264,9 +5266,15 @@ function bgsCropMount(panel) {
 
       function makeHeroCard(p) {
         var sub = p.metal ? (p.metal + (p.stone ? ' · ' + p.stone : '')) : (p.stone || '');
+        var cropStyle = '';
+        if (p.crop && isFinite(p.crop.fx) && isFinite(p.crop.fy)) {
+          var origin = (p.crop.fx * 100).toFixed(2) + '% ' + (p.crop.fy * 100).toFixed(2) + '%';
+          cropStyle = 'object-position:' + origin + ';transform-origin:' + origin + ';' +
+                      (isFinite(p.crop.scale) && p.crop.scale > 1 ? 'transform:scale(' + p.crop.scale.toFixed(4) + ');' : '');
+        }
         return '<div class="product-card card-enter" style="cursor:pointer" onclick="bgsOpenHeroModal(\'' + escHtml(p.id) + '\')">' +
           '<div class="relative w-full overflow-hidden" style="padding-top:100%">' +
-            '<img src="' + escHtml(p.img) + '" alt="' + escHtml(p.name) + '" loading="lazy" class="card-img absolute inset-0 w-full h-full object-cover">' +
+            '<img src="' + escHtml(p.img) + '" alt="' + escHtml(p.name) + '" loading="lazy" class="card-img absolute inset-0 w-full h-full object-cover" style="' + cropStyle + '">' +
             '<div class="card-overlay absolute inset-0 flex flex-col justify-end" style="padding:1.4rem 1.2rem 1.2rem;background:linear-gradient(to top,rgba(10,10,10,0.97) 0%,rgba(10,10,10,0.75) 35%,rgba(10,10,10,0.15) 65%,transparent 100%)">' +
               '<p class="card-tag text-[0.58rem] tracking-[0.32em] uppercase mb-1" style="color:#d4af37">' + escHtml(p.tag||p.category||'') + '</p>' +
               '<h3 class="card-name font-playfair font-medium mb-1 leading-snug" style="font-size:1.05rem;color:#fff;letter-spacing:0.03em">' + escHtml(p.name) + '</h3>' +

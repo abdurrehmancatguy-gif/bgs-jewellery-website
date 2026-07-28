@@ -1632,6 +1632,10 @@
         padding: 0 clamp(0.5rem, 1.6vw, 1.4rem);
         align-items: stretch;
       }
+      /* The track exists only so a phone can scroll the slats without the
+         panel. Here it dissolves and `order` restores the drawn sequence. */
+      .bge2-track { display: contents; }
+      .bge2-swipe { display: none; }
 
       .bge2-slat {
         position: relative;
@@ -1765,38 +1769,74 @@
          There is no hover to drive an accordion, so the strip becomes a row of
          portrait cards you swipe through, with the panel above it. */
       @media (max-width: 900px), (hover: none) {
+        /* The panel is lifted clear of the scroller — inside it, it scrolled
+           away with the slats and its text was cut off at both edges. */
         .bge2-strip {
-          display: grid;
-          grid-auto-flow: column;
-          grid-auto-columns: 62vw;
-          gap: 0.6rem;
+          display: block;
           height: auto;
+          padding: 0;
+          overflow: visible;
+        }
+        .bge2-centre {
+          order: 0 !important;
+          flex: none;
+          display: block;
+          width: auto;
+          text-align: left;
+          padding: 0 1.15rem 1.25rem;
+        }
+        .bge2-title {
+          writing-mode: horizontal-tb;
+          font-size: clamp(1.9rem, 8.5vw, 2.7rem);
+          line-height: 1.05;
+        }
+        .bge2-rule { width: 34px; height: 1px; margin: 0.9rem 0; }
+        .bge2-sub { line-height: 2; }
+
+        /* Swipe hint — only where there is something to swipe. */
+        .bge2-swipe {
+          display: flex;
+          align-items: center;
+          gap: 0.55rem;
+          margin: 1.1rem 0 0;
+          font-family: 'Inter','Helvetica Neue',sans-serif;
+          font-size: 0.56rem;
+          letter-spacing: 0.28em;
+          text-transform: uppercase;
+          color: rgba(212,175,55,0.75);
+        }
+        .bge2-swipe-arrow {
+          display: inline-block;
+          animation: bge2Nudge 1.7s ease-in-out infinite;
+        }
+        @keyframes bge2Nudge {
+          0%, 100% { transform: translateX(0); opacity: 0.55; }
+          50%      { transform: translateX(7px); opacity: 1; }
+        }
+
+        .bge2-track {
+          display: flex;
+          gap: 0.6rem;
           overflow-x: auto;
           scroll-snap-type: x mandatory;
           -webkit-overflow-scrolling: touch;
           scrollbar-width: none;
-          padding: 0 1rem 0.5rem;
+          padding: 0 1.15rem 0.4rem;
         }
-        .bge2-strip::-webkit-scrollbar { display: none; }
+        .bge2-track::-webkit-scrollbar { display: none; }
+
         .bge2-slat {
-          flex: none;
+          flex: 0 0 62vw;
           aspect-ratio: 3 / 4;
           scroll-snap-align: center;
         }
-        .bge2-strip:hover .bge2-slat,
-        .bge2-strip .bge2-slat:hover { flex-grow: 0; }
+        .bge2-track:hover .bge2-slat,
+        .bge2-track .bge2-slat:hover { flex-grow: 0; }
         .bge2-slat::after { opacity: 0.5; }
-        .bge2-centre {
-          flex: none;
-          grid-row: 1;
-          order: -1;
-          width: 62vw;
-          padding: 0.5rem 0;
-        }
-        .bge2-title {
-          writing-mode: horizontal-tb;
-          font-size: clamp(1.8rem, 8vw, 2.6rem);
-        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .bge2-swipe-arrow { animation: none; }
       }
 
       /* ── GOLD RATE BAND ──
@@ -4609,12 +4649,16 @@
         if (strip.getAttribute('data-sig') === sig) return;
         strip.setAttribute('data-sig', sig);
 
-        /* Four slats, the panel, then the rest — the panel sits in the middle
-           of the row the way the layout was drawn. */
+        /* The panel is written first and the slats follow in one track, so a
+           phone can lift the panel out of the scroller. On desktop the track
+           dissolves (display:contents) and `order` puts the panel back in the
+           middle of the row, where the layout was drawn. */
         var split = Math.min(4, Math.ceil(tiles.length / 2));
         function slat(t, i) {
           var label = t.tag || t.name || '';
-          return '<figure class="bge2-slat" style="--bge-delay:' + (0.05 * i + 0.05).toFixed(2) + 's">' +
+          var order = i < split ? (i + 1) : (i + 2);
+          return '<figure class="bge2-slat" style="order:' + order + ';' +
+                   '--bge-delay:' + (0.05 * i + 0.05).toFixed(2) + 's">' +
                    '<img src="' + escHtml(t.img) + '" alt="' + escHtml(t.name || label) + '"' +
                      ' decoding="async" loading="eager"' +
                      ' style="' + bgsSlatImgStyle(t) + '">' +
@@ -4623,13 +4667,17 @@
         }
 
         strip.innerHTML =
-          tiles.slice(0, split).map(slat).join('') +
-          '<div class="bge2-centre">' +
+          '<div class="bge2-centre" style="order:' + (split + 1) + '">' +
             '<h2 class="bge2-title" style="--bge-delay:0.18s">Crafted to Endure</h2>' +
             '<span class="bge2-rule" style="--bge-delay:0.24s"></span>' +
             '<p class="bge2-sub" style="--bge-delay:0.3s">Precious forms.<br>Lasting stories.</p>' +
+            '<p class="bge2-swipe" aria-hidden="true">' +
+              '<span>Swipe to explore</span><span class="bge2-swipe-arrow">&rarr;</span>' +
+            '</p>' +
           '</div>' +
-          tiles.slice(split).map(function (t, i) { return slat(t, i + split); }).join('');
+          '<div class="bge2-track">' +
+            tiles.map(slat).join('') +
+          '</div>';
 
       }
 

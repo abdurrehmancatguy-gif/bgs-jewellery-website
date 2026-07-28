@@ -2714,8 +2714,21 @@
           }).catch(function (err) {
             console.warn('[BGS] Sync error:', err.message);
           });
-        }, 600);
+        }, 80);
       }
+
+      /* Force an immediate (no debounce) Firebase write — called after explicit
+         user saves like crop, so a quick page-refresh can't lose the change. */
+      function bgsSyncFlush() {
+        clearTimeout(_bgsSyncTimer);
+        _bgsSyncTimer = null;
+        bgsSyncToServer(); // reschedules with 80ms — effectively immediate
+      }
+
+      // Flush on page unload so the 80ms debounce never silently drops a save
+      window.addEventListener('beforeunload', function () {
+        try { bgsSyncFlush(); } catch (e) {}
+      });
 
       // Write a snapshot fetched from the cloud into this device's localStorage.
       function bgsApplySnapshot(snapshot) {
@@ -5130,6 +5143,7 @@ function bgsCropMount(panel) {
             if (arr[i].id === id) { arr[i].crop = crop; break; }
           }
           saveSectionSelection(sid, arr);
+          bgsSyncFlush();
           _bgsCropOpen = null;
           renderSectionPanel(sid);
         });

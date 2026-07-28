@@ -3879,6 +3879,23 @@
       })();
       function bgsCardAspect(i) { return BGS_CARD_ASPECTS[i] || 1; }
 
+      /* Where each card actually sits in the collage, so the picker reads as
+         the layout rather than as an index. The two that differ most in shape
+         say so — those are the ones a photo can be chosen badly for. Names
+         describe the desktop composition; phones stack the same order. */
+      var BGS_CARD_NAMES = [
+        'Top left (large)',
+        'Top centre-left',
+        'Top centre-right',
+        'Top right (tall)',
+        'Middle left',
+        'Middle right',
+        'Bottom left',
+        'Bottom centre (wide)',
+        'Bottom right'
+      ];
+      function bgsCardName(i) { return BGS_CARD_NAMES[i] || ('Card ' + (i + 1)); }
+
       function bgsZoomScale(z) {
         if (!z || z === 'fit') return '1';
         var n = parseFloat(z);
@@ -4072,12 +4089,12 @@
               var upBtn   = i > 0 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + escHtml(p.id) + '\',-1)">↑</button>' : '<span style="width:24px;display:inline-block"></span>';
               var downBtn = i < selected.length-1 ? '<button class="bgs-hp-move" onclick="bgsHeroMove(\'' + escHtml(p.id) + '\',1)">↓</button>' : '<span style="width:24px;display:inline-block"></span>';
               return '<div class="bgs-hp-selected-row">' +
-                '<select class="bgs-hp-slot" title="Which card this piece takes in the hero"' +
+                '<select class="bgs-hp-slot" title="Where this piece sits in the collage"' +
                   ' data-id="' + escHtml(p.id) + '"' +
                   ' onchange="bgsHeroSetSlot(this.dataset.id, this.value)">' +
                   selected.map(function (_, si) {
                     return '<option value="' + (si+1) + '"' + (si === i ? ' selected' : '') + '>' +
-                             'Card ' + (si+1) + '</option>';
+                             escHtml(bgsCardName(si)) + '</option>';
                   }).join('') +
                 '</select>' +
                 '<img class="bgs-hp-sel-img" src="' + escHtml(p.img) + '" alt="">' +
@@ -4106,7 +4123,7 @@
                   }).join('') +
                 '</select>' +
                 '<button class="bgs-hp-cropbtn' + (p.crop ? ' bgs-on' : '') + '"' +
-                  ' title="Crop this photo to card ' + (i+1) + '"' +
+                  ' title="Crop this photo to the ' + escHtml(bgsCardName(i).toLowerCase()) + ' card"' +
                   ' onclick="bgsHeroCropToggle(\'' + escHtml(p.id) + '\')">' +
                   (p.crop ? 'Re-crop' : 'Crop') +
                 '</button>' +
@@ -4114,7 +4131,8 @@
               '</div>' +
               (_bgsCropOpen === p.id
                 ? '<div class="bgs-hp-crop" data-id="' + escHtml(p.id) + '">' +
-                    '<p class="bgs-hp-crop-head">Crop for card ' + (i+1) + ' — drag to move, slider to zoom</p>' +
+                    '<p class="bgs-hp-crop-head">Crop for ' + escHtml(bgsCardName(i)) +
+                      ' — drag to move, slider to zoom</p>' +
                     '<div class="bgs-hp-crop-stage">' +
                       '<img src="' + escHtml(p.img) + '" alt="">' +
                       '<span class="bgs-hp-crop-mask"></span>' +

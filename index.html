@@ -1190,6 +1190,34 @@
       section.relative.w-full.overflow-hidden.bg-black
         > div[class*="sm:bottom-24"] > p { display: none !important; }
 
+      /* ── NO FLASH OF THE OLD COLLECTION ──
+         The collage is injected by script, so React paints its own version of
+         this section first — the "Curated exclusively" header and the product
+         card grid — and it flashes past on every load before being replaced.
+         Replacing it after the fact can never be fast enough; the fix is that
+         it must not paint at all. So React's children are hidden by stylesheet,
+         which applies the instant they are created, and the collage is the only
+         child ever allowed to show. It also keeps them hidden if React
+         re-renders and puts them back.
+
+         The height the collage will occupy is reserved up front, or the section
+         would collapse to nothing and the rest of the page would jump when the
+         collage arrives — trading one flash for another. The formula mirrors
+         the stage below: width capped at 1500px, a 1.55 aspect, plus padding. */
+      #collection > *:not(#bgs-editorial) { display: none !important; }
+      #collection {
+        padding: 0 !important;
+        min-height: calc(
+          min(1500px, 100vw - 2 * clamp(1rem, 4vw, 3.5rem)) / 1.55
+          + 2 * clamp(3rem, 7vw, 6rem)
+        );
+      }
+      /* Phones stack into a mosaic of unpredictable height, so there is nothing
+         reliable to reserve; the section grows to fit instead. */
+      @media (max-width: 760px) {
+        #collection { min-height: 0; }
+      }
+
       /* ══ EDITORIAL COLLECTION ══
          The nine-object collage that replaces the old product-card grid. Tiles
          are placed as percentages of a fixed-ratio stage, so the composition

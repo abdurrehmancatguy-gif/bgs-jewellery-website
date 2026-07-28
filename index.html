@@ -517,6 +517,25 @@
       }
       #bgs-admin-gold-panel .bgs-ag-save:hover { opacity: 0.88; }
 
+      .bgs-save-all-btn {
+        background: #d4af37;
+        color: #0a0a0a;
+        border: none;
+        border-radius: 3px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        padding: 0.7rem 2.2rem;
+        cursor: pointer;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        transition: opacity 0.15s;
+        display: block;
+        width: 100%;
+      }
+      .bgs-save-all-btn:hover { opacity: 0.88; }
+      .bgs-save-all-btn:disabled { opacity: 0.55; cursor: default; }
+
       #bgs-admin-gold-panel .bgs-ag-clear {
         background: none;
         border: 1px solid rgba(255,255,255,0.1);
@@ -2669,6 +2688,10 @@
          than this predate the change, so applying them would undo it — see the
          staleness check in the Firestore listener. */
       var _lastLocalMutationTs = 0;
+      /* Highest ts we have ever applied from Firestore. Ensures a stale cached
+         snapshot (e.g. after a network reconnect) can never overwrite data from
+         a more-recent snapshot that was already applied. */
+      var _lastAppliedFirebaseTs = 0;
 
       function bgsSyncToServer() {
         _lastLocalMutationTs = Date.now();
@@ -2730,9 +2753,28 @@
         try { bgsSyncFlush(); } catch (e) {}
       });
 
+      // Explicit "Save Changes" button handler — flushes immediately and gives
+      // the user a visible confirmation so they know the push went through.
+      window.bgsSaveAllChanges = function (btn) {
+        bgsSyncFlush();
+        if (!btn) return;
+        var orig = btn.textContent;
+        btn.textContent = 'Saved ✓';
+        btn.disabled = true;
+        setTimeout(function () {
+          btn.textContent = orig;
+          btn.disabled = false;
+        }, 2200);
+      };
+
       // Write a snapshot fetched from the cloud into this device's localStorage.
-      function bgsApplySnapshot(snapshot) {
+      // snapshotTs: the ts field from the Firestore document (monotonicity guard).
+      function bgsApplySnapshot(snapshot, snapshotTs) {
         if (!snapshot || typeof snapshot !== 'object') return;
+        if (typeof snapshotTs === 'number') {
+          if (snapshotTs < _lastAppliedFirebaseTs) return;
+          _lastAppliedFirebaseTs = snapshotTs;
+        }
         var sig = JSON.stringify(snapshot);
         if (sig === _lastPulledSig) return;
         _lastPulledSig = sig;
@@ -2788,10 +2830,11 @@
                  user changes something, and applying it afterwards silently
                  reinstates the value they just cleared. */
               if (typeof d.ts === 'number' && d.ts < _lastLocalMutationTs) return;
+              var snapshotTs = typeof d.ts === 'number' ? d.ts : 0;
               var snapshot;
               try { snapshot = JSON.parse(d.json || '{}'); }
               catch (e) { return; }
-              bgsApplySnapshot(snapshot);
+              bgsApplySnapshot(snapshot, snapshotTs);
             },
             function (err) { console.warn('[BGS] Firebase listener error:', err.message); }
           );
@@ -4995,7 +5038,10 @@
           selHtml +
           (selected.length > 0 ? '<button id="bgs-hp-reset" onclick="bgsHeroClear(\'' + SEC.id + '\')">Reset to defaults</button><br><br>' : '') +
           '<p class="bgs-hp-section-label" style="margin-top:' + (selected.length ? '1.5rem' : '0') + '">Add to collection</p>' +
-          '<div class="bgs-hp-grid">' + availHtml + '</div>';
+          '<div class="bgs-hp-grid">' + availHtml + '</div>' +
+          '<div style="margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid rgba(212,175,55,0.1);">' +
+            '<button class="bgs-save-all-btn" onclick="bgsSaveAllChanges(this)">Save Changes</button>' +
+          '</div>';
 
         /* innerHTML wiped the previous cropper's listeners, so rebind. */
         bgsCropMount(panel);

@@ -5,7 +5,7 @@
     <link rel="icon" href="/logo.png?v=2" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BGS Jewellery</title>
-    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=7"></script>
+    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=8"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-d0osuhxy.css?v=2">
 
     <!-- ═══════════════════════════════════════════════════════════════
@@ -1750,20 +1750,6 @@
         line-height: 1.9;
         color: rgba(226,214,184,0.72);
       }
-      .bge2-cta {
-        border: 1px solid rgba(212,175,55,0.5);
-        background: none;
-        color: #e6d9ad;
-        font-family: 'Inter','Helvetica Neue',sans-serif;
-        font-size: 0.56rem;
-        letter-spacing: 0.26em;
-        text-transform: uppercase;
-        padding: 0.8rem 1.2rem;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
-      }
-      .bge2-cta:hover { background: rgba(212,175,55,0.14); color: #fff; border-color: #d4af37; }
 
       /* Reveal on scroll, matching the collage above it */
       #bgs-editions .bge2-slat,
@@ -4637,12 +4623,9 @@
             '<h2 class="bge2-title" style="--bge-delay:0.18s">The Gold Editions</h2>' +
             '<span class="bge2-rule" style="--bge-delay:0.24s"></span>' +
             '<p class="bge2-sub" style="--bge-delay:0.3s">Nine stories of<br>craft and continuity</p>' +
-            '<button class="bge2-cta" type="button" style="--bge-delay:0.36s">Open the Edition</button>' +
           '</div>' +
           tiles.slice(split).map(function (t, i) { return slat(t, i + split); }).join('');
 
-        var cta = strip.querySelector('.bge2-cta');
-        if (cta) cta.addEventListener('click', bgsGoToContact);
       }
 
       /* A slat always covers, so only the focal point and zoom carry over —

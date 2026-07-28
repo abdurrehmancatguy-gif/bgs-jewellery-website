@@ -470,15 +470,20 @@
         font-size: 0.56rem;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        padding: 0.3rem 0.5rem;
-        margin-right: 0.5rem;
+        padding: 0.34rem 0.7rem;
         cursor: pointer;
         flex: 0 0 auto;
+        white-space: nowrap;
+        width: auto;
+        min-width: max-content;
+        line-height: 1.4;
       }
       .bgs-hp-cropbtn:hover { border-color: rgba(212,175,55,0.55); color: #d4af37; }
       .bgs-hp-cropbtn.bgs-on { border-color: #d4af37; color: #d4af37; }
 
       .bgs-hp-slot {
+        min-width: 5.4rem;
+        white-space: nowrap;
         background: rgba(212,175,55,0.1);
         border: 1px solid rgba(212,175,55,0.3);
         border-radius: 2px;
@@ -487,7 +492,6 @@
         font-size: 0.58rem;
         letter-spacing: 0.06em;
         padding: 0.28rem 0.25rem;
-        margin-right: 0.6rem;
         flex: 0 0 auto;
         cursor: pointer;
       }
@@ -496,6 +500,8 @@
       .bgs-hp-slot option { background: #141414; color: #ddd; }
 
       .bgs-hp-pos {
+        min-width: 8.4rem;
+        white-space: nowrap;
         background: rgba(255,255,255,0.04);
         border: 1px solid rgba(255,255,255,0.12);
         border-radius: 2px;
@@ -503,7 +509,6 @@
         font-family: 'Inter','Helvetica Neue',sans-serif;
         font-size: 0.6rem;
         padding: 0.28rem 0.3rem;
-        margin-right: 0.5rem;
         flex: 0 0 auto;
         cursor: pointer;
       }
@@ -560,14 +565,38 @@
         margin-bottom: 0.6rem;
         font-family: 'Inter','Helvetica Neue',sans-serif;
       }
+      /* Two lines per piece: identity on top, the adjustments beneath. The
+         controls outgrew a single row — squeezed into one line the selects
+         collapse to a bare chevron and the button labels spill past their
+         borders. Explicit areas rather than auto-placement, so adding another
+         control later cannot silently reflow the whole row. */
       .bgs-hp-selected-row {
         display: grid;
-        grid-template-columns: 22px 44px 1fr auto;
-        gap: 0.55rem;
+        grid-template-columns: auto 44px minmax(0, 1fr) auto;
+        grid-template-areas:
+          "slot img  name   btns"
+          "slot img  adjust adjust";
+        gap: 0.4rem 0.55rem;
         align-items: center;
-        padding: 0.45rem 0;
+        padding: 0.55rem 0;
         border-bottom: 1px solid rgba(255,255,255,0.04);
       }
+      .bgs-hp-selected-row > .bgs-hp-slot     { grid-area: slot; align-self: center; }
+      .bgs-hp-selected-row > .bgs-hp-sel-img  { grid-area: img; }
+      .bgs-hp-selected-row > .bgs-hp-rename   { grid-area: name; }
+      .bgs-hp-selected-row > .bgs-hp-sel-btns { grid-area: btns; }
+      .bgs-hp-selected-row > .bgs-hp-adjust   { grid-area: adjust; }
+
+      .bgs-hp-adjust {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem;
+        min-width: 0;
+      }
+      /* Each control keeps its own width — none of them may be shrunk to fit,
+         which is what pushed the labels outside their boxes. */
+      .bgs-hp-adjust > * { flex: 0 0 auto; }
       .bgs-hp-sel-num {
         font-size: 0.62rem;
         color: #d4af37;
@@ -4056,6 +4085,10 @@
                   ' data-id="' + escHtml(p.id) + '" title="Rename — shown under this tile in the hero"' +
                   ' onchange="bgsHeroRename(this.dataset.id, this.value)"' +
                   ' onkeydown="if(event.key===\'Enter\'){this.blur();}">' +
+                '<div class="bgs-hp-sel-btns">' + upBtn + downBtn +
+                  '<button class="bgs-hp-remove" onclick="bgsHeroRemove(\'' + escHtml(p.id) + '\')">✕</button>' +
+                '</div>' +
+                '<div class="bgs-hp-adjust">' +
                 '<select class="bgs-hp-pos" title="How much of the photo to show"' +
                   ' data-id="' + escHtml(p.id) + '"' +
                   ' onchange="bgsHeroSetZoom(this.dataset.id, this.value)">' +
@@ -4075,10 +4108,8 @@
                 '<button class="bgs-hp-cropbtn' + (p.crop ? ' bgs-on' : '') + '"' +
                   ' title="Crop this photo to card ' + (i+1) + '"' +
                   ' onclick="bgsHeroCropToggle(\'' + escHtml(p.id) + '\')">' +
-                  (p.crop ? 'Cropped' : 'Crop') +
+                  (p.crop ? 'Re-crop' : 'Crop') +
                 '</button>' +
-                '<div class="bgs-hp-sel-btns">' + upBtn + downBtn +
-                  '<button class="bgs-hp-remove" onclick="bgsHeroRemove(\'' + escHtml(p.id) + '\')">✕</button>' +
                 '</div>' +
               '</div>' +
               (_bgsCropOpen === p.id

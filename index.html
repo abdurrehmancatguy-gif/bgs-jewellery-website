@@ -5,7 +5,7 @@
     <link rel="icon" href="/logo.png?v=2" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BGS Jewellery</title>
-    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=9"></script>
+    <script type="module" crossorigin src="/assets/index-bgsv2.js?v=11"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-d0osuhxy.css?v=2">
 
     <!-- ═══════════════════════════════════════════════════════════════
@@ -1372,12 +1372,43 @@
       /* ── HERO COPY REMOVED ──
          Both descriptive paragraphs are dropped. Targeted by their Tailwind
          position classes rather than the JS-added lift classes so they never
-         flash in before the script runs. The right-hand block keeps its
-         Browse More / Collection buttons — only its <p> goes. */
+         flash in before the script runs. The CTA button group (Contact Us +
+         Collection) is removed from the hero entirely — Contact Us lives at
+         the bottom of the collection instead, via bgsRetargetCTAs. */
       section.relative.w-full.overflow-hidden.bg-black
         > div[class*="bottom-14"][class*="left-10"] { display: none !important; }
       section.relative.w-full.overflow-hidden.bg-black
-        > div[class*="sm:bottom-24"] > p { display: none !important; }
+        > div[class*="sm:bottom-24"] { display: none !important; }
+
+      /* ── BOTTOM CONTACT US BUTTON ──
+         The collection-section "Browse More" button is retargeted to "Contact
+         Us" and opens WhatsApp. Give it a centred, full-width treatment so it
+         reads as a clear page-level CTA rather than a section affordance. */
+      #bgs-contact-cta-wrap {
+        padding: 2.5rem 1.5rem 3rem;
+        display: flex;
+        justify-content: center;
+      }
+      #bgs-contact-cta-wrap button {
+        background: #d4af37 !important;
+        color: #0a0a0a !important;
+        border: none;
+        border-radius: 50px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        padding: 0.85rem 3rem;
+        cursor: pointer;
+        font-family: 'Inter','Helvetica Neue',sans-serif;
+        transition: opacity 0.15s, transform 0.15s;
+        box-shadow: 0 8px 32px rgba(212,175,55,0.22);
+        min-width: 200px;
+      }
+      #bgs-contact-cta-wrap button:hover {
+        opacity: 0.88;
+        transform: translateY(-1px);
+      }
 
       /* ── NO FLASH OF THE OLD COLLECTION ──
          The collage is injected by script, so React paints its own version of
@@ -3632,25 +3663,37 @@
                     '_blank', 'noopener,noreferrer');
       }
 
-      /* Both "Browse More" buttons (hero and the foot of the collection
-         section) call React's inventory router. Relabel them and swallow the
-         click in the capture phase — React listens on the root, so stopping
-         propagation at the target keeps its handler from ever running. */
+      /* Both "Browse More" buttons are hidden entirely — the hero one is
+         covered by the CSS rule above, the collection-footer one is hidden
+         here. A standalone gold "Contact Us" button is injected at the bottom
+         of the collection section via bgsBuildContactCTA. */
       function bgsRetargetCTAs() {
         if (BGS_INVENTORY_VISIBLE) return;
         var btns = document.querySelectorAll('#root button');
         for (var i = 0; i < btns.length; i++) {
           var b = btns[i];
           if ((b.textContent || '').trim() !== 'Browse More') continue;
-          b.textContent = 'Contact Us';          // re-applied if React re-renders
-          if (b.dataset.bgsCta === '1') continue;
-          b.dataset.bgsCta = '1';
-          b.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            bgsGoToContact();
-          }, true);
+          b.style.display = 'none';
         }
+      }
+
+      /* Inject a stable "Contact Us" button at the bottom of the page. */
+      function bgsBuildContactCTA() {
+        if (document.getElementById('bgs-contact-cta-wrap')) return;
+        // Try to anchor after the editions section, or fall back to #collection
+        var anchor = document.getElementById('bgs-editions') ||
+                     document.getElementById('collection');
+        if (!anchor) return;
+        var wrap = document.createElement('div');
+        wrap.id = 'bgs-contact-cta-wrap';
+        var btn = document.createElement('button');
+        btn.textContent = 'Contact Us';
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          bgsGoToContact();
+        });
+        wrap.appendChild(btn);
+        anchor.parentElement.insertBefore(wrap, anchor.nextSibling);
       }
 
       /* The 600ms tick catches re-renders, but on its own it can let a frame
@@ -4289,6 +4332,18 @@
         ul.appendChild(footerLink('bgs-terms-li', 'Terms of Use',
                                   function () { bgsOpenLegal('terms'); }));
         ul.appendChild(footerLink('bgs-about-us-li', 'About Us', bgsOpenAbout));
+
+        /* Hide the React-rendered nav links (Collection, Lab Diamonds, etc.)
+           — keep only the three links we just injected. */
+        var ourIds = { 'bgs-privacy-li': 1, 'bgs-terms-li': 1, 'bgs-about-us-li': 1 };
+        var items = ul.querySelectorAll('li');
+        for (var j = 0; j < items.length; j++) {
+          if (!ourIds[items[j].id]) items[j].style.display = 'none';
+        }
+
+        /* Centre the remaining links inside the list. */
+        ul.style.cssText += ';justify-content:center!important;display:flex!important;flex-wrap:wrap!important;gap:1.4rem!important;';
+
         return true;
       }
 
@@ -5520,7 +5575,7 @@ function bgsCropMount(panel) {
       /* ─────────────────────────────────────────
          SCROLLING RIBBON — pause-on-hover + editable text (synced)
          ───────────────────────────────────────── */
-      var DEFAULT_MARQUEE = ['22K Gold', 'Lab Grown Diamonds', 'Handcrafted', 'BGS Jewellery', 'Bespoke Jewellery', 'Hidden Luxury'];
+      var DEFAULT_MARQUEE = ['22K Gold', 'Lab Grown Diamonds', 'Handcrafted', 'BGS Jewellery', 'Bespoke Jewellery'];
 
       function getMarqueeItems(customOnly) {
         try {
@@ -5670,8 +5725,9 @@ function bgsCropMount(panel) {
           navInjected = false;
         }
 
-        // Keep the CTAs pointing at contact rather than the hidden inventory
+        // Hide the React Browse More buttons and inject our standalone CTA
         bgsRetargetCTAs();
+        bgsBuildContactCTA();
 
         // Footer About Us
         if (!footerInjected) {

@@ -1679,16 +1679,6 @@
       }
       .bge2-slat:hover::after { opacity: 0.45; }
 
-      .bge2-num {
-        position: absolute;
-        top: 1.1rem; left: 1rem;
-        z-index: 2;
-        font-family: 'Playfair Display', Georgia, serif;
-        font-style: italic;
-        font-size: 1.15rem;
-        color: #d9bf6a;
-        pointer-events: none;
-      }
       /* The label runs up the slat, so it stays readable however narrow the
          slat gets. */
       .bge2-label {
@@ -1704,7 +1694,7 @@
         color: rgba(238,230,208,0.82);
         white-space: nowrap;
         pointer-events: none;
-        max-height: calc(100% - 4.5rem);
+        max-height: calc(100% - 2.5rem);
         overflow: hidden;
       }
       .bge2-label::after {
@@ -4612,7 +4602,6 @@
                    '<img src="' + escHtml(t.img) + '" alt="' + escHtml(t.name || label) + '"' +
                      ' decoding="async" loading="eager"' +
                      ' style="' + bgsSlatImgStyle(t) + '">' +
-                   '<span class="bge2-num">' + (i < 9 ? '0' + (i + 1) : (i + 1)) + '</span>' +
                    '<span class="bge2-label">' + escHtml(label) + '</span>' +
                  '</figure>';
         }
@@ -4620,9 +4609,9 @@
         strip.innerHTML =
           tiles.slice(0, split).map(slat).join('') +
           '<div class="bge2-centre">' +
-            '<h2 class="bge2-title" style="--bge-delay:0.18s">The Gold Editions</h2>' +
+            '<h2 class="bge2-title" style="--bge-delay:0.18s">Crafted to Endure</h2>' +
             '<span class="bge2-rule" style="--bge-delay:0.24s"></span>' +
-            '<p class="bge2-sub" style="--bge-delay:0.3s">Nine stories of<br>craft and continuity</p>' +
+            '<p class="bge2-sub" style="--bge-delay:0.3s">Precious forms.<br>Lasting stories.</p>' +
           '</div>' +
           tiles.slice(split).map(function (t, i) { return slat(t, i + split); }).join('');
 

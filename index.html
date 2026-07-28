@@ -4576,9 +4576,25 @@
          Crops are cut against this, so it has to be the real shape. */
       var BGS_SLAT_ASPECT = 0.56;
 
+      /* The strip's own nine. Portrait, worn-on-the-body shots, which suit a
+         tall slat far better than the collage's product photography — and
+         since the two sections keep separate lists, each can default to the
+         set that fits its shape. */
+      var BGS_EDITIONS_DEFAULT = [
+        {id:'ed-collar',      img:'/assets/hero/editions/collar-necklace.webp?v=1',     tag:'Gold Collar Necklace',     name:'Gold Collar Necklace'},
+        {id:'ed-chain',       img:'/assets/hero/editions/chain-necklace.webp?v=1',      tag:'Gold Chain Necklace',      name:'Gold Chain Necklace'},
+        {id:'ed-chandelier',  img:'/assets/hero/editions/chandelier-earrings.webp?v=1', tag:'Chandelier Earrings',      name:'Gold Chandelier Earrings'},
+        {id:'ed-bangles',     img:'/assets/hero/editions/gold-bangles.webp?v=1',        tag:'Gold Bangles',             name:'Gold Bangles'},
+        {id:'ed-riviera',     img:'/assets/hero/editions/riviera-necklace.webp?v=1',    tag:'Diamond Riviera',          name:'Diamond Riviera Necklace'},
+        {id:'ed-bracelet',    img:'/assets/hero/editions/gold-bracelet.webp?v=1',       tag:'Gold Bracelet',            name:'Gold Bracelet'},
+        {id:'ed-ring',        img:'/assets/hero/editions/statement-ring.webp?v=1',      tag:'Statement Ring',           name:'Gold Statement Ring'},
+        {id:'ed-studs',       img:'/assets/hero/editions/diamond-studs.webp?v=1',       tag:'Diamond Studs',            name:'Diamond Studs'},
+        {id:'ed-diamondring', img:'/assets/hero/editions/diamond-ring.webp?v=1',        tag:'Diamond Ring',             name:'Diamond Ring'}
+      ];
+
       function bgsEditionTiles() {
         var sel = getSectionSelection('editions');
-        var list = sel.length ? sel : BGS_SHOWCASE;
+        var list = sel.length ? sel : BGS_EDITIONS_DEFAULT;
         return list.slice(0, BGS_HERO_MAX);
       }
 
@@ -4697,7 +4713,9 @@
       window.addEventListener('bgs_hero_updated', bgsRenderEditorialTiles);
 
       function getHeroPool() {
-        var pool = BGS_SHOWCASE.slice();
+        /* Every photograph the site ships with, so either section can draw on
+           any of them — they are chosen independently, not partitioned. */
+        var pool = BGS_SHOWCASE.concat(BGS_EDITIONS_DEFAULT);
         try {
           var inv = JSON.parse(localStorage.getItem('fg_inventory') || '[]');
           inv.forEach(function(item) {

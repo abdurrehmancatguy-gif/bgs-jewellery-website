@@ -1986,8 +1986,7 @@
         line-height: 1;
         white-space: nowrap;
       }
-      #bgs-hero-rates .bghr-cell.bghr-22k .bghr-p { color: #d4af37; }
-      #bgs-hero-rates .bghr-cell.bghr-22k .bghr-k { color: rgba(212,175,55,0.6); }
+      /* 22K cell uses the same colours as every other cell — no special treatment. */
 
       #bgs-hero-rates .bghr-u {
         font-size: 0.52rem;
@@ -3189,6 +3188,19 @@
 
       var currentBase22K = 459.75;
       var liveRates = {};
+      /* True once we have data we trust (live fetch resolved or admin override).
+         The bar stays hidden (opacity:0) until this is set, so the user never
+         sees the hardcoded 459.75 fallback flash before real prices arrive. */
+      var _bgsRatesReady = false;
+
+      function revealRatesBar() {
+        _bgsRatesReady = true;
+        var bar = document.getElementById('bgs-hero-rates');
+        if (!bar) return; // injectHeroRateBar will reveal it when it runs
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () { bar.classList.add('bghr-in'); });
+        });
+      }
 
       async function fetchLivePrice() {
         try {
@@ -3400,11 +3412,13 @@
         }
 
         if (_bgsLastRates) renderHeroRateBar(_bgsLastRates);
-        // Fade in on the next frame so the transition actually runs.
-        // rAF is throttled to zero in a background tab, so a timer backs it up.
-        var reveal = function () { bar.classList.add('bghr-in'); };
-        requestAnimationFrame(function () { requestAnimationFrame(reveal); });
-        setTimeout(reveal, 400);
+        // Only reveal once we have trusted live data — revealRatesBar() handles
+        // the transition when the fetch resolves. If rates were already ready
+        // before the bar was injected (e.g. fast network), reveal right away.
+        if (_bgsRatesReady) {
+          var reveal = function () { bar.classList.add('bghr-in'); };
+          requestAnimationFrame(function () { requestAnimationFrame(reveal); });
+        }
         return true;
       }
 
@@ -3464,19 +3478,41 @@
       async function initGold() {
         var admin22 = getAdminRate('22K');
         var cached = getCached22K();
+
         if (admin22 !== null) {
+          // Admin override — always authoritative, show immediately.
           currentBase22K = admin22;
-        } else if (cached) {
-          currentBase22K = cached;
-        }
-        renderHeroRateBar(computeAllRates(currentBase22K));
-        // Fetch fresh in background
-        fetchLivePrice().then(function (p) {
-          var a22 = getAdminRate('22K');
-          if (a22 === null) currentBase22K = p;
           renderHeroRateBar(computeAllRates(currentBase22K));
-          updateAdminPlaceholders();
-        });
+          revealRatesBar();
+          fetchLivePrice().then(function () { updateAdminPlaceholders(); });
+        } else if (cached) {
+          // Cached value from a previous visit — show it right away so the
+          // bar appears instantly, then silently replace with the live figure.
+          currentBase22K = cached;
+          renderHeroRateBar(computeAllRates(currentBase22K));
+          revealRatesBar();
+          fetchLivePrice().then(function (p) {
+            currentBase22K = p;
+            renderHeroRateBar(computeAllRates(currentBase22K));
+            updateAdminPlaceholders();
+          });
+        } else {
+          // First-ever visit: no cache — wait for the live fetch so we never
+          // flash the hardcoded 459.75 fallback. 4 s safety net if fetch stalls.
+          var fallbackTimer = setTimeout(function () {
+            if (!_bgsRatesReady) {
+              renderHeroRateBar(computeAllRates(currentBase22K));
+              revealRatesBar();
+            }
+          }, 4000);
+          fetchLivePrice().then(function (p) {
+            clearTimeout(fallbackTimer);
+            currentBase22K = p;
+            renderHeroRateBar(computeAllRates(currentBase22K));
+            revealRatesBar();
+            updateAdminPlaceholders();
+          });
+        }
       }
 
       // Refresh live price every 5 minutes

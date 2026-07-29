@@ -3480,25 +3480,31 @@
         var cached = getCached22K();
 
         if (admin22 !== null) {
-          // Admin override is authoritative — show immediately.
+          // Admin override — always authoritative, show immediately.
           currentBase22K = admin22;
           renderHeroRateBar(computeAllRates(currentBase22K));
           revealRatesBar();
           fetchLivePrice().then(function () { updateAdminPlaceholders(); });
+        } else if (cached) {
+          // Cached value from a previous visit — show it right away so the
+          // bar appears instantly, then silently replace with the live figure.
+          currentBase22K = cached;
+          renderHeroRateBar(computeAllRates(currentBase22K));
+          revealRatesBar();
+          fetchLivePrice().then(function (p) {
+            currentBase22K = p;
+            renderHeroRateBar(computeAllRates(currentBase22K));
+            updateAdminPlaceholders();
+          });
         } else {
-          // Seed with cache so computeAllRates has a reasonable base while
-          // the fetch is in flight, but don't reveal until live data arrives.
-          if (cached) currentBase22K = cached;
-
-          // 4-second safety net: if the fetch stalls, show cached/fallback
-          // rather than leaving an invisible bar indefinitely.
+          // First-ever visit: no cache — wait for the live fetch so we never
+          // flash the hardcoded 459.75 fallback. 4 s safety net if fetch stalls.
           var fallbackTimer = setTimeout(function () {
             if (!_bgsRatesReady) {
               renderHeroRateBar(computeAllRates(currentBase22K));
               revealRatesBar();
             }
           }, 4000);
-
           fetchLivePrice().then(function (p) {
             clearTimeout(fallbackTimer);
             currentBase22K = p;

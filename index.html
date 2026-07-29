@@ -5919,6 +5919,92 @@ function bgsCropMount(panel) {
         setTimeout(tick, 1200);
       });
 
+      /* ── SCROLL-BASED NAV ACTIVE STATE ────────────────────────────────────
+         React only sets the active pill on click; scrolling leaves it stale.
+         IntersectionObserver watches the three landmark sections and keeps
+         the pill in sync. A MutationObserver reapplies after React re-renders
+         the nav — it is created exactly once and guards against re-entry.   */
+      (function () {
+        var _activeSection = 'home';
+        var _applying = false;   /* re-entry guard so MO doesn't recurse */
+        var _moAttached = false; /* create the MO only once               */
+
+        var SECTION_MAP = [
+          { key: 'home',       label: 'Home' },
+          { key: 'collection', label: 'The Collection' },
+          { key: 'visit',      label: 'Visit Us' }
+        ];
+        var ACTIVE_CLS   = ['bg-white', 'text-gray-900'];
+        var INACTIVE_CLS = ['text-white/80', 'hover:bg-white/20', 'hover:text-white'];
+
+        function getPill() { return document.querySelector('nav .bg-white\\/20'); }
+
+        function applyNavActive() {
+          if (_applying) return;
+          var pill = getPill();
+          if (!pill) return;
+          _applying = true;
+          try {
+            pill.querySelectorAll('button').forEach(function (btn) {
+              var label = btn.textContent.trim();
+              var match = SECTION_MAP.filter(function (m) { return m.label === label; })[0];
+              if (!match) return;
+              if (match.key === _activeSection) {
+                INACTIVE_CLS.forEach(function (c) { btn.classList.remove(c); });
+                ACTIVE_CLS.forEach(function (c) { btn.classList.add(c); });
+              } else {
+                ACTIVE_CLS.forEach(function (c) { btn.classList.remove(c); });
+                INACTIVE_CLS.forEach(function (c) { btn.classList.add(c); });
+              }
+            });
+          } finally {
+            _applying = false;
+          }
+        }
+
+        function setupScrollObserver() {
+          var hero       = document.querySelector('section.relative.w-full.overflow-hidden.bg-black');
+          var collection = document.getElementById('collection');
+          var footer     = document.querySelector('footer');
+          if (!hero || !collection || !footer) return false;
+
+          new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+              if (!e.isIntersecting) return;
+              if (e.target === hero)            _activeSection = 'home';
+              else if (e.target === collection) _activeSection = 'collection';
+              else if (e.target === footer)     _activeSection = 'visit';
+              applyNavActive();
+            });
+          }, { threshold: 0.15 }).observe(hero),
+          new IntersectionObserver(function (entries) {
+            if (entries[0].isIntersecting) { _activeSection = 'collection'; applyNavActive(); }
+          }, { threshold: 0.15 }).observe(collection),
+          new IntersectionObserver(function (entries) {
+            if (entries[0].isIntersecting) { _activeSection = 'visit'; applyNavActive(); }
+          }, { threshold: 0.15 }).observe(footer);
+          return true;
+        }
+
+        function attachMutationObserver() {
+          if (_moAttached) return;
+          var pill = getPill();
+          if (!pill) return;
+          _moAttached = true;
+          new MutationObserver(function () {
+            if (!_applying) applyNavActive();
+          }).observe(pill, { subtree: true, attributes: true, attributeFilter: ['class'] });
+        }
+
+        /* Bootstrap: retry until all three sections exist, then stop */
+        var _scrollObsReady = false;
+        var _initTimer = setInterval(function () {
+          if (!_scrollObsReady) _scrollObsReady = setupScrollObserver();
+          attachMutationObserver();
+          if (_scrollObsReady && _moAttached) clearInterval(_initTimer);
+        }, 500);
+      })();
+
     })();
     </script>
     <!-- PERF: async-decode + lazy-load images. Anything already carrying a

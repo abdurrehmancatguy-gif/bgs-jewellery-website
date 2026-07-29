@@ -1900,12 +1900,12 @@
         }
         .bge2-track:hover .bge2-slat,
         .bge2-track .bge2-slat:hover { flex-grow: 0; }
-        .bge2-slat::after { opacity: 0.5; }
+        .bge2-slat::after { opacity: 0.5; transition-duration: 0.12s !important; }
 
         /* Tap-to-reveal: lifts the overlay on the tapped slat */
-        .bge2-slat.bge2-tapped { border-color: rgba(212,175,55,0.5); }
-        .bge2-slat.bge2-tapped img { filter: saturate(1) brightness(1.02); }
-        .bge2-slat.bge2-tapped::after { opacity: 0.08; }
+        .bge2-slat.bge2-tapped { border-color: rgba(212,175,55,0.5) !important; }
+        .bge2-slat.bge2-tapped img { filter: saturate(1) brightness(1.02) !important; }
+        .bge2-slat.bge2-tapped::after { opacity: 0.05 !important; }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -5980,20 +5980,26 @@ function bgsCropMount(panel) {
       function bgsSetupSlatTap() {
         var track = document.querySelector('.bge2-track');
         if (!track) return false;
-        var startX, activeSlat;
+        var startX, pendingSlat, pendingTimer;
         track.addEventListener('touchstart', function (e) {
           var slat = e.target.closest('.bge2-slat');
           if (!slat) return;
           startX = e.touches[0].clientX;
-          activeSlat = slat;
-          track.querySelectorAll('.bge2-slat').forEach(function (s) { s.classList.remove('bge2-tapped'); });
-          slat.classList.add('bge2-tapped');
+          pendingSlat = slat;
+          clearTimeout(pendingTimer);
+          /* Wait 50 ms — lets iOS resolve scroll vs tap before we commit.
+             If touchmove fires first the pending is cancelled. */
+          pendingTimer = setTimeout(function () {
+            if (!pendingSlat) return;
+            track.querySelectorAll('.bge2-slat').forEach(function (s) { s.classList.remove('bge2-tapped'); });
+            pendingSlat.classList.add('bge2-tapped');
+          }, 50);
         }, { passive: true });
         track.addEventListener('touchmove', function (e) {
-          if (!activeSlat) return;
-          if (Math.abs(e.touches[0].clientX - startX) > 12) {
-            activeSlat.classList.remove('bge2-tapped');
-            activeSlat = null;
+          if (!pendingSlat) return;
+          if (Math.abs(e.touches[0].clientX - startX) > 20) {
+            clearTimeout(pendingTimer);
+            pendingSlat = null;
           }
         }, { passive: true });
         return true;

@@ -5980,21 +5980,21 @@ function bgsCropMount(panel) {
       function bgsSetupSlatTap() {
         var track = document.querySelector('.bge2-track');
         if (!track) return false;
-        var startX, startY, startScroll;
+        var startX, activeSlat;
         track.addEventListener('touchstart', function (e) {
-          startX = e.touches[0].clientX;
-          startY = e.touches[0].clientY;
-          startScroll = track.scrollLeft;
-        }, { passive: true });
-        track.addEventListener('touchend', function (e) {
-          var dx = Math.abs(e.changedTouches[0].clientX - startX);
-          var dy = Math.abs(e.changedTouches[0].clientY - startY);
-          var scrolled = Math.abs(track.scrollLeft - startScroll);
-          if (dx > 8 || dy > 8 || scrolled > 4) return;
           var slat = e.target.closest('.bge2-slat');
           if (!slat) return;
+          startX = e.touches[0].clientX;
+          activeSlat = slat;
           track.querySelectorAll('.bge2-slat').forEach(function (s) { s.classList.remove('bge2-tapped'); });
           slat.classList.add('bge2-tapped');
+        }, { passive: true });
+        track.addEventListener('touchmove', function (e) {
+          if (!activeSlat) return;
+          if (Math.abs(e.touches[0].clientX - startX) > 12) {
+            activeSlat.classList.remove('bge2-tapped');
+            activeSlat = null;
+          }
         }, { passive: true });
         return true;
       }

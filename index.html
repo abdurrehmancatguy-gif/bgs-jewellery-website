@@ -2091,6 +2091,10 @@
         backdrop-filter: blur(14px) !important;
         -webkit-backdrop-filter: blur(14px) !important;
         box-shadow: 0 10px 34px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+        /* Never stretch wider than the buttons it contains — the grid column
+           can be 1fr but the pill should always be content-sized. */
+        width: fit-content !important;
+        justify-self: center !important;
       }
 
       /* Inactive items — warm off-white, gold on hover */

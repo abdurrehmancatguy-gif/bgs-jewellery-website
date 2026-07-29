@@ -2168,6 +2168,63 @@
            the outer wrapper dissolve keeps them positioned correctly. */
         #bgs-collection-nav { display: contents !important; }
       }
+
+      /* ═══════════════════════════════════════════════════════════
+         MOBILE OPTIMISATION  (≤ 640 px)
+         Collected here so all phone-specific overrides are in
+         one place and easy to audit.
+         ═══════════════════════════════════════════════════════════ */
+      @media (max-width: 640px) {
+
+        /* ── Hero rates bar ─────────────────────────────────────
+           The AED unit text is already hidden. Nudge the karat
+           label and price up slightly so they read at arm's length. */
+        #bgs-hero-rates .bghr-k { font-size: 0.52rem; letter-spacing: 0.14em; }
+        #bgs-hero-rates .bghr-p { font-size: 0.82rem; }
+
+        /* ── Editions section ───────────────────────────────────
+           clamp() resolves to its lower bound on phones —
+           tighten to values that leave proportional breathing room. */
+        #bgs-editions {
+          padding-top: 1.75rem  !important;
+          padding-bottom: 2rem  !important;
+        }
+        .bge2-centre { padding: 0 1.15rem 1rem; }
+        .bge2-title  { font-size: clamp(1.7rem, 7.5vw, 2.4rem); }
+
+        /* Swipe-scrollable slats — slightly narrower so the next
+           card peeks in, signalling that there's more to explore. */
+        .bge2-slat { flex: 0 0 56vw !important; }
+
+        /* ── Contact CTA ────────────────────────────────────────
+           Halve the top padding; keep enough bottom clearance. */
+        #bgs-contact-cta-wrap { padding: 1.25rem 1.5rem 1.75rem; }
+
+        /* Button stretches edge-to-edge on narrow screens so it
+           feels like a primary action, not a small detail. */
+        #bgs-contact-cta-wrap button {
+          width: 100%;
+          max-width: 360px;
+          padding-left: 1.5rem  !important;
+          padding-right: 1.5rem !important;
+        }
+
+        /* ── Footer — store-info block ──────────────────────────
+           React renders 64 px top/bottom padding; halve it. */
+        footer > div:first-child { padding: 2.25rem 1.25rem !important; }
+        /* The address / hours / contact grid has 32 px gaps. */
+        footer > div:first-child > div { gap: 1.25rem !important; }
+        /* Tighten individual info-block headings (ADDRESS, HOURS…) */
+        footer > div:first-child p,
+        footer > div:first-child h2 { margin-bottom: 0.5rem !important; }
+
+        /* ── Footer — logo / links / copyright block ────────────
+           React renders 56 px top padding; bring it closer to the
+           store block so the footer doesn't feel bottomless. */
+        footer > div:last-child { padding: 2rem 1.5rem 1.25rem !important; }
+        /* The link list has mt-8 (2 rem) from its parent; pull it in. */
+        footer > div:last-child ul { margin-top: 1rem !important; }
+      }
     </style>
   </head>
   <body>
@@ -5783,6 +5840,10 @@ function bgsCropMount(panel) {
           navInjected = false;
         }
 
+        // Scroll-based nav active state
+        if (!_bgsNavObsReady) _bgsNavObsReady = bgsSetupNavObserver();
+        bgsApplyNavActive();
+
         // Hide the React Browse More buttons and inject our standalone CTA
         bgsRetargetCTAs();
         bgsBuildContactCTA();
@@ -5861,6 +5922,49 @@ function bgsCropMount(panel) {
         setTimeout(tick, 600);
         setTimeout(tick, 1200);
       });
+
+      /* ── SCROLL-BASED NAV ACTIVE STATE ────────────────────────────────────
+         React only sets the active pill on click; scrolling leaves it stale.
+         IntersectionObserver tracks which section is visible and stores the
+         result in _bgsActiveSection. The existing 600ms tick loop calls
+         bgsApplyNavActive() to sync the pill — no MutationObserver needed
+         (MO callbacks are microtasks that fire after the synchronous frame,
+         so a re-entry flag cannot prevent them from retriggering).          */
+      var _bgsActiveSection = 'home';
+      var _bgsNavObsReady   = false;
+
+      function bgsApplyNavActive() {
+        var pill = document.querySelector('nav .bg-white\\/20');
+        if (!pill) return;
+        var labels = { 'Home': 'home', 'The Collection': 'collection', 'Visit Us': 'visit' };
+        pill.querySelectorAll('button').forEach(function (btn) {
+          var key = labels[btn.textContent.trim()];
+          if (!key) return;
+          if (key === _bgsActiveSection) {
+            btn.classList.remove('text-white/80', 'hover:bg-white/20', 'hover:text-white');
+            btn.classList.add('bg-white', 'text-gray-900');
+          } else {
+            btn.classList.remove('bg-white', 'text-gray-900');
+            btn.classList.add('text-white/80', 'hover:bg-white/20', 'hover:text-white');
+          }
+        });
+      }
+
+      function bgsSetupNavObserver() {
+        var hero = document.querySelector('section.relative.w-full.overflow-hidden.bg-black');
+        var col  = document.getElementById('collection');
+        var foot = document.querySelector('footer');
+        if (!hero || !col || !foot) return false;
+        var mkObs = function (key) {
+          return new IntersectionObserver(function (entries) {
+            if (entries[0].isIntersecting) _bgsActiveSection = key;
+          }, { threshold: 0.15 });
+        };
+        mkObs('home').observe(hero);
+        mkObs('collection').observe(col);
+        mkObs('visit').observe(foot);
+        return true;
+      }
 
     })();
     </script>

@@ -1900,12 +1900,26 @@
         }
         .bge2-track:hover .bge2-slat,
         .bge2-track .bge2-slat:hover { flex-grow: 0; }
-        .bge2-slat::after { opacity: 0.5; transition-duration: 0.12s !important; }
+        .bge2-slat::after { opacity: 0.5; }
 
-        /* Tap-to-reveal: lifts the overlay on the tapped slat */
+        /* iOS leaves :hover stuck on the last-tapped element, so the desktop
+           hover rules fire on touch and fight the tapped class — that was the
+           flicker. Pin them back to the resting values here; .bge2-tapped is
+           the only thing that reveals a slat on touch. */
+        .bge2-strip:hover .bge2-slat { flex-grow: var(--bge-base-grow, 1); }
+        .bge2-slat:hover::after { opacity: 0.5; }
+        .bge2-slat:hover img { filter: saturate(0.9) brightness(0.82); }
+
+        /* Tap-to-reveal — near-instant, so the image is there on finger-down */
         .bge2-slat.bge2-tapped { border-color: rgba(212,175,55,0.5) !important; }
-        .bge2-slat.bge2-tapped img { filter: saturate(1) brightness(1.02) !important; }
-        .bge2-slat.bge2-tapped::after { opacity: 0.05 !important; }
+        .bge2-slat.bge2-tapped img {
+          filter: saturate(1) brightness(1.02) !important;
+          transition-duration: 0.09s !important;
+        }
+        .bge2-slat.bge2-tapped::after {
+          opacity: 0 !important;
+          transition-duration: 0.09s !important;
+        }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -5977,29 +5991,30 @@ function bgsCropMount(panel) {
         return true;
       }
 
+      /* Delegated on document, not on .bge2-track: bgsRenderEditionSlats()
+         rewrites the strip's innerHTML every time Firebase pushes new
+         editions data, which replaces the track and silently kills any
+         listener bound to it — the tap then did nothing until the next
+         re-render happened to land. Delegation survives all of that. */
       function bgsSetupSlatTap() {
-        var track = document.querySelector('.bge2-track');
-        if (!track) return false;
-        var startX, pendingSlat, pendingTimer;
-        track.addEventListener('touchstart', function (e) {
-          var slat = e.target.closest('.bge2-slat');
+        var startX = 0, armed = null;
+        document.addEventListener('touchstart', function (e) {
+          var slat = e.target.closest && e.target.closest('.bge2-slat');
           if (!slat) return;
           startX = e.touches[0].clientX;
-          pendingSlat = slat;
-          clearTimeout(pendingTimer);
-          /* Wait 50 ms — lets iOS resolve scroll vs tap before we commit.
-             If touchmove fires first the pending is cancelled. */
-          pendingTimer = setTimeout(function () {
-            if (!pendingSlat) return;
-            track.querySelectorAll('.bge2-slat').forEach(function (s) { s.classList.remove('bge2-tapped'); });
-            pendingSlat.classList.add('bge2-tapped');
-          }, 50);
+          armed  = slat;
+          /* Applied on finger-down, no timer — the reveal has to be there
+             the instant the finger lands. A swipe undoes it in touchmove. */
+          document.querySelectorAll('.bge2-slat.bge2-tapped').forEach(function (s) {
+            if (s !== slat) s.classList.remove('bge2-tapped');
+          });
+          slat.classList.add('bge2-tapped');
         }, { passive: true });
-        track.addEventListener('touchmove', function (e) {
-          if (!pendingSlat) return;
+        document.addEventListener('touchmove', function (e) {
+          if (!armed) return;
           if (Math.abs(e.touches[0].clientX - startX) > 20) {
-            clearTimeout(pendingTimer);
-            pendingSlat = null;
+            armed.classList.remove('bge2-tapped');
+            armed = null;
           }
         }, { passive: true });
         return true;

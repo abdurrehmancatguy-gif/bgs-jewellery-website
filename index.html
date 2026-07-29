@@ -1707,6 +1707,7 @@
       .bge2-slat {
         position: relative;
         flex: 1 1 0;
+        flex-grow: var(--bge-base-grow, 1);
         min-width: 0;
         margin: 0;
         overflow: hidden;
@@ -4823,7 +4824,9 @@
         function slat(t, i) {
           var label = t.tag || t.name || '';
           var order = i < split ? (i + 1) : (i + 2);
+          var grow  = i < split ? '1.25' : '1';
           return '<figure class="bge2-slat" style="order:' + order + ';' +
+                   '--bge-base-grow:' + grow + ';' +
                    '--bge-delay:' + (0.05 * i + 0.05).toFixed(2) + 's">' +
                    '<img src="' + escHtml(t.img) + '" alt="' + escHtml(t.name || label) + '"' +
                      ' decoding="async" loading="eager"' +
